@@ -9,7 +9,6 @@ export default function IosStorePage() {
 
   const handleInstall = () => {
     setIsInstalling(true);
-    // Track event
     if (window.dataLayer) {
       window.dataLayer.push({ 
         event: 'pwa_install_click',
@@ -23,162 +22,166 @@ export default function IosStorePage() {
       setProgress(p);
       if (p >= 100) {
         clearInterval(interval);
-        window.location.href = '/'; // Go to offer page after "install"
+        window.location.href = '/'; 
       }
     }, 100);
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#1c1c1e] font-sans pb-20 select-none">
+    <div style={{
+      minHeight: '100vh',
+      width: '100%',
+      backgroundColor: '#ffffff',
+      color: '#1c1c1e',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      paddingBottom: '80px',
+      margin: 0,
+      display: 'block'
+    }}>
       {/* Top Navbar */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#e5e5ea] px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm">
-             <img src="/images/app-icon.png" alt="Icon" className="w-full h-full object-cover" />
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid #e5e5ea',
+        padding: '12px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+           <div style={{ width: '32px', height: '32px', borderRadius: '8px', overflow: 'hidden' }}>
+             <img src="/images/app-icon.png" alt="Icon" style={{ width: '32px', height: '32px', objectFit: 'cover' }} />
            </div>
-           <span className="font-semibold text-sm opacity-0 transition-opacity duration-300">GanhouBet</span>
         </div>
         <button 
           onClick={handleInstall}
-          className="bg-[#007aff] text-white px-4 py-1.5 rounded-full text-sm font-bold active:scale-95 transition-all"
+          style={{
+            backgroundColor: '#007aff',
+            color: '#ffffff',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            border: 'none',
+            cursor: 'pointer'
+          }}
         >
           {isInstalling ? `${progress}%` : 'OBTER'}
         </button>
       </div>
 
-      <div className="max-w-md mx-auto px-5 pt-6">
+      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px 0' }}>
         {/* Main Header */}
-        <div className="flex gap-4 mb-6">
-          <div className="w-[110px] h-[110px] rounded-[22%] overflow-hidden shadow-xl border border-[#f2f2f7]">
-            <img src="/images/app-icon.png" alt="GanhouBet Icon" className="w-full h-full object-cover" />
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ 
+            width: '110px', 
+            height: '110px', 
+            minWidth: '110px',
+            borderRadius: '24px', 
+            overflow: 'hidden', 
+            boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+            border: '1px solid #f2f2f7',
+            backgroundColor: '#fff'
+          }}>
+            <img src="/images/app-icon.png" alt="GanhouBet Icon" style={{ width: '110px', height: '110px', objectFit: 'cover' }} />
           </div>
-          <div className="flex flex-col justify-center flex-1">
-            <h1 className="text-[22px] font-bold leading-tight tracking-tight">GanhouBet: Mascot Slots Casino</h1>
-            <p className="text-[#8e8e93] text-[15px] font-medium mt-1">Win Real Cash & Jackpots</p>
-            <div className="mt-auto flex items-center justify-between">
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 'bold', lineHeight: 1.2, margin: 0, color: '#1c1c1e' }}>GanhouBet: Mascot Slots Casino</h1>
+            <p style={{ color: '#8e8e93', fontSize: '15px', fontWeight: '500', margin: '4px 0 0' }}>Win Real Cash & Jackpots</p>
+            <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                <button 
                 onClick={handleInstall}
-                className="bg-[#007aff] text-white px-6 py-1.5 rounded-full text-base font-bold active:scale-95 transition-all"
+                style={{
+                  backgroundColor: '#007aff',
+                  color: '#ffffff',
+                  padding: '6px 24px',
+                  borderRadius: '20px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
                >
                 {isInstalling ? 'BAIXANDO...' : 'OBTER'}
                </button>
-               <span className="text-[10px] text-[#8e8e93] font-semibold text-center leading-none mr-2">Compras <br/> no App</span>
+               <span style={{ fontSize: '10px', color: '#8e8e93', fontWeight: '600', textAlign: 'center', marginRight: '8px' }}>Compras <br/> no App</span>
             </div>
           </div>
         </div>
 
         {/* Stats Row */}
-        <div className="flex justify-between py-4 border-y border-[#f2f2f7] mb-6 overflow-x-auto gap-8 no-scrollbar">
-          <div className="flex flex-col items-center min-w-[70px]">
-            <span className="text-[10px] text-[#8e8e93] font-bold uppercase">64 mil avaliações</span>
-            <span className="text-[18px] font-bold text-[#48484a] mt-1">4.9</span>
-            <div className="flex text-[#ffcc00] text-[8px] mt-0.5">★★★★★</div>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          padding: '16px 0', 
+          borderTop: '1px solid #f2f2f7', 
+          borderBottom: '1px solid #f2f2f7', 
+          marginBottom: '24px',
+          overflowX: 'auto',
+          gap: '20px'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+            <span style={{ fontSize: '9px', color: '#8e8e93', fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' }}>64K AVALIAÇÕES</span>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#48484a', marginTop: '4px' }}>4.9</span>
           </div>
-          <div className="flex flex-col items-center min-w-[70px]">
-            <span className="text-[10px] text-[#8e8e93] font-bold uppercase">Ranking</span>
-            <span className="text-[18px] font-bold text-[#48484a] mt-1">#1</span>
-            <span className="text-[10px] text-[#8e8e93] font-bold">em Cassino</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, borderLeft: '1px solid #f2f2f7', borderRight: '1px solid #f2f2f7' }}>
+            <span style={{ fontSize: '9px', color: '#8e8e93', fontWeight: 'bold', textTransform: 'uppercase' }}>RANKING</span>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#48484a', marginTop: '4px' }}>#1</span>
           </div>
-          <div className="flex flex-col items-center min-w-[70px]">
-            <span className="text-[10px] text-[#8e8e93] font-bold uppercase">Classificação</span>
-            <span className="text-[18px] font-bold text-[#48484a] mt-1">18+</span>
-            <span className="text-[10px] text-[#8e8e93] font-bold">Anos</span>
-          </div>
-          <div className="flex flex-col items-center min-w-[70px]">
-            <span className="text-[10px] text-[#8e8e93] font-bold uppercase">Tamanho</span>
-            <span className="text-[18px] font-bold text-[#48484a] mt-1">92.4</span>
-            <span className="text-[10px] text-[#8e8e93] font-bold">MB</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+            <span style={{ fontSize: '9px', color: '#8e8e93', fontWeight: 'bold', textTransform: 'uppercase' }}>IDADE</span>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#48484a', marginTop: '4px' }}>18+</span>
           </div>
         </div>
 
         {/* Screenshots Carrossel */}
-        <div className="mb-8">
-           <h2 className="text-[20px] font-bold mb-4">Pré-visualização</h2>
-           <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5">
-              <div className="min-w-[240px] aspect-[9/19.5] rounded-3xl overflow-hidden shadow-lg border border-[#f2f2f7]">
-                <img src="/images/screen-1.png" alt="Preview 1" className="w-full h-full object-cover" />
+        <div style={{ marginBottom: '32px' }}>
+           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1c1c1e' }}>Pré-visualização</h2>
+           <div className="no-scrollbar" style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px' }}>
+              <div style={{ 
+                minWidth: '240px', 
+                height: '480px', 
+                borderRadius: '24px', 
+                overflow: 'hidden', 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                border: '1px solid #f2f2f7' 
+              }}>
+                <img src="/images/screen-1.png" alt="Preview 1" style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
               </div>
-              <div className="min-w-[240px] aspect-[9/19.5] rounded-3xl overflow-hidden shadow-lg border border-[#f2f2f7]">
-                <img src="/images/screen-2.png" alt="Preview 2" className="w-full h-full object-cover" />
+              <div style={{ 
+                minWidth: '240px', 
+                height: '480px', 
+                borderRadius: '24px', 
+                overflow: 'hidden', 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                border: '1px solid #f2f2f7' 
+              }}>
+                <img src="/images/screen-2.png" alt="Preview 2" style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
               </div>
            </div>
-           <p className="text-[12px] text-[#8e8e93] mt-3 flex items-center gap-1">
-             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12" y2="18"></line></svg>
-             iPhone
-           </p>
         </div>
 
-        {/* What's New */}
-        <div className="py-5 border-t border-[#f2f2f7] mb-4">
-          <div className="flex justify-between items-baseline mb-2">
-            <h2 className="text-[20px] font-bold">Novidades</h2>
-            <Link href="#" className="text-[#007aff] text-[15px]">Histórico de versões</Link>
-          </div>
-          <div className="flex justify-between text-[#8e8e93] text-[14px] mb-3">
-             <span>Versão 1.0.18</span>
-             <span>há 5 dias</span>
-          </div>
-          <p className="text-[15px] leading-snug">
-            Nesta atualização, otimizamos o desempenho do "Fortune Tiger" e do "Mascot Hub" para carregamentos super rápidos. Agora com suporte a pagamentos instantâneos via PIX direto no app.
+        {/* Text Sections */}
+        <div style={{ padding: '20px 0', borderTop: '1px solid #f2f2f7' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 12px', color: '#1c1c1e' }}>Novidades</h2>
+          <p style={{ fontSize: '14px', color: '#8e8e93', margin: '0 0 12px' }}>Versão 1.0.18 • há 5 dias</p>
+          <p style={{ fontSize: '15px', lineHeight: 1.5, color: '#1c1c1e' }}>
+            Otimizações no Fortune Tiger e suporte a pagamentos PIX instantâneos.
           </p>
         </div>
 
-        {/* Preview Description */}
-        <div className="py-5 border-t border-[#f2f2f7] mb-8">
-          <p className="text-[15px] leading-snug">
-            Bem-vindo ao GanhouBet, o cassino social nº 1 onde os mascotes ganham vida! Jogue slots incríveis com Touro, Tigre e Porco Cowboy.
-          </p>
-          <Link href="#" className="text-[#007aff] text-[15px] mt-2 block">mais</Link>
-        </div>
-
-        {/* Detail Table */}
-        <div className="py-5 border-t border-[#f2f2f7]">
-           <h2 className="text-[20px] font-bold mb-4">Informações</h2>
-           <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-[#f2f2f7]/50 text-[14px]">
-                <span className="text-[#8a8a8e]">Vendedor</span>
-                <span className="font-medium">GanhouBet Studio Ltd.</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#f2f2f7]/50 text-[14px]">
-                <span className="text-[#8a8a8e]">Tamanho</span>
-                <span className="font-medium">92.4 MB</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#f2f2f7]/50 text-[14px]">
-                <span className="text-[#8a8a8e]">Categoria</span>
-                <span className="font-medium">Jogos: Cassino</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#f2f2f7]/50 text-[14px]">
-                <span className="text-[#8a8a8e]">Compatibilidade</span>
-                <span className="font-medium">Funciona neste iPhone</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-[#f2f2f7]/50 text-[14px]">
-                <span className="text-[#8a8a8e]">Idiomas</span>
-                <span className="font-medium">Português, Inglês</span>
-              </div>
-           </div>
-        </div>
-
-        {/* Footer info */}
-        <div className="mt-10 mb-20 text-center space-y-2">
-           <p className="text-[12px] text-[#8e8e93]">Copyright © 2026 GanhouBet Studio</p>
-           <div className="flex justify-center gap-4 text-[12px] text-[#007aff]">
-             <Link href="#">Política de Privacidade</Link>
-             <Link href="#">Termos e Condições</Link>
-           </div>
+        <div style={{ marginTop: '40px', textAlign: 'center', opacity: 0.5, fontSize: '12px', color: '#8e8e93' }}>
+           <p>Copyright © 2026 GanhouBet Studio</p>
         </div>
       </div>
 
       <style jsx global>{`
-        body {
-          -webkit-tap-highlight-color: transparent;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        body { background-color: white !important; color: #1c1c1e !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
