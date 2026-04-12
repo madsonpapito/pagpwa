@@ -70,6 +70,13 @@ export default function AdminDashboard() {
     });
   };
 
+  const getTestUrl = () => {
+    if (!config.twrParams) return '';
+    // Substitui macros {{...}} por 'test_value' para evitar bloqueio do Cloaker durante testes manuais
+    const cleanParams = config.twrParams.replace(/\{\{.*?\}\}/g, 'test_val');
+    return `https://play.ganhoubet.xyz/?${cleanParams}`;
+  };
+
   if (!isLogged) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -147,6 +154,15 @@ export default function AdminDashboard() {
           <div style={{ fontSize: '11px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
             <strong>Dica:</strong> A Safe Page está em <code>/safe</code> e a Oferta está na Raiz <code>/</code>. Configure isso no painel do TWR.
           </div>
+
+          <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: '10px' }}>
+            <h4 style={{ color: '#ff4444', marginBottom: '8px', fontSize: '14px' }}>🆘 Erro "Access Denied"?</h4>
+            <ul style={{ fontSize: '12px', color: 'var(--gray)', paddingLeft: '15px', margin: 0 }}>
+              <li>Verifique se a campanha está <strong>Ativa/Running</strong> no TWR.</li>
+              <li>Não use os colchetes <code>{"{{ }}"}</code> em testes manuais.</li>
+              <li>No Cloudflare, o domínio <strong>play</strong> deve estar com a nuvem cinza (Apenas DNS).</li>
+            </ul>
+          </div>
         </div>
 
         {/* Push Notification Config */}
@@ -188,8 +204,17 @@ export default function AdminDashboard() {
 
       <div style={{ marginTop: '30px', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
         {config.twrParams && (
-          <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'rgba(0,255,136,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid var(--primary)' }}>
-            <strong>URL do Anúncio:</strong> https://play.ganhoubet.xyz/?{config.twrParams}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'rgba(0,255,136,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid var(--primary)', textAlign: 'left', flex: 1 }}>
+              <strong>URL do Anúncio (Final):</strong> https://play.ganhoubet.xyz/?{config.twrParams}
+            </div>
+            <button 
+              onClick={() => window.open(getTestUrl(), '_blank')}
+              className="btn-outline" 
+              style={{ fontSize: '12px', whiteSpace: 'nowrap' }}
+            >
+              🚀 Gerar Link de Teste
+            </button>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
