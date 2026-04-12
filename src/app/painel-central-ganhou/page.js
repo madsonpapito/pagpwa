@@ -10,7 +10,8 @@ export default function AdminDashboard() {
     gtmId: '',
     appName: '',
     pushMessages: [],
-    twrParams: ''
+    twrParams: '',
+    twrSlug: ''
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -72,9 +73,10 @@ export default function AdminDashboard() {
 
   const getTestUrl = () => {
     if (!config.twrParams) return '';
+    const slug = config.twrSlug ? `${config.twrSlug.replace(/^\/|\/$/g, '')}/` : '';
     // Substitui macros {{...}} por 'test_value' para evitar bloqueio do Cloaker durante testes manuais
     const cleanParams = config.twrParams.replace(/\{\{.*?\}\}/g, 'test_val');
-    return `https://play.ganhoubet.xyz/?${cleanParams}`;
+    return `https://play.ganhoubet.xyz/${slug}?${cleanParams}`;
   };
 
   if (!isLogged) {
@@ -147,9 +149,17 @@ export default function AdminDashboard() {
           <textarea 
             className="input-field" 
             placeholder="Ex: cwr=123&cname=campanha1"
-            style={{ minHeight: '80px' }}
+            style={{ minHeight: '80px', marginBottom: '15px' }}
             value={config.twrParams || ''}
             onChange={e => setConfig({...config, twrParams: e.target.value})}
+          />
+
+          <label>Slug/Path da Campanha (Obrigatório se houver barra na TWR)</label>
+          <input 
+            className="input-field" 
+            placeholder="Ex: okdvfxefj8"
+            value={config.twrSlug || ''}
+            onChange={e => setConfig({...config, twrSlug: e.target.value})}
           />
           <div style={{ fontSize: '11px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
             <strong>Dica:</strong> A Safe Page está em <code>/safe</code> e a Oferta está na Raiz <code>/</code>. Configure isso no painel do TWR.
@@ -206,7 +216,7 @@ export default function AdminDashboard() {
         {config.twrParams && (
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'rgba(0,255,136,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid var(--primary)', textAlign: 'left', flex: 1 }}>
-              <strong>URL do Anúncio (Final):</strong> https://play.ganhoubet.xyz/?{config.twrParams}
+              <strong>URL do Anúncio (Final):</strong> https://play.ganhoubet.xyz/{config.twrSlug ? config.twrSlug.replace(/^\/|\/$/g, '') + '/' : ''}?{config.twrParams}
             </div>
             <button 
               onClick={() => window.open(getTestUrl(), '_blank')}

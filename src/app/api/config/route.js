@@ -29,7 +29,8 @@ async function getConfig() {
       gtmId: 'GTM-PNLMZZ8V',
       appName: 'GanhouBet App',
       pushMessages: [],
-      twrParams: ''
+      twrParams: '',
+      twrSlug: ''
     };
   }
 }
