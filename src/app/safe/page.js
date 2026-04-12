@@ -17,7 +17,7 @@ export default function SafePage() {
           autoShowDelay: 3000,
         },
         theme: {
-          button: { backgroundColor: "#007aff", customIconSrc: "/assets/touro.png" },
+          button: { backgroundColor: "#007aff", customIconSrc: "/touro.png" },
         },
       });
     };
@@ -29,7 +29,7 @@ export default function SafePage() {
       {/* Premium Header */}
       <header style={{ padding: '20px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/assets/touro.png" style={{ width: '40px', borderRadius: '8px' }} />
+          <img src="/touro.png" style={{ width: '40px', borderRadius: '8px' }} />
           <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Mascot Legends Premium</span>
         </div>
         <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', fontWeight: '500' }}>
@@ -55,9 +55,9 @@ export default function SafePage() {
       <section style={{ padding: '60px 5%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
           {[
-            { name: 'O Touro', img: '/assets/touro.png', desc: 'Símbolo de força e liderança.' },
-            { name: 'O Tigre', img: '/assets/tiger.png', desc: 'Agilidade e precisão em cada detalhe.' },
-            { name: 'O Porco Cowboy', img: '/assets/pig.png', desc: 'Aventura e estratégia no Velho Oeste Digital.' }
+            { name: 'O Touro', img: '/touro.png', desc: 'Símbolo de força e liderança.' },
+            { name: 'O Tigre', img: '/tiger.png', desc: 'Agilidade e precisão em cada detalhe.' },
+            { name: 'O Porco Cowboy', img: '/pig.png', desc: 'Aventura e estratégia no Velho Oeste Digital.' }
           ].map((m, i) => (
             <div key={i} style={{ backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
               <div style={{ height: '250px', backgroundColor: '#f0f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
