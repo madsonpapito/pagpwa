@@ -9,7 +9,8 @@ export default function AdminDashboard() {
     affiliateLink: '',
     gtmId: '',
     appName: '',
-    pushMessages: []
+    pushMessages: [],
+    twrParams: ''
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -140,11 +141,8 @@ export default function AdminDashboard() {
             className="input-field" 
             placeholder="Ex: cwr=123&cname=campanha1"
             style={{ minHeight: '80px' }}
-            onChange={e => {
-              const params = e.target.value;
-              const baseUrl = "https://play.ganhoubet.xyz/";
-              setStatus(`URL do Anúncio: ${baseUrl}?${params}`);
-            }}
+            value={config.twrParams || ''}
+            onChange={e => setConfig({...config, twrParams: e.target.value})}
           />
           <div style={{ fontSize: '11px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', color: 'var(--primary)' }}>
             <strong>Dica:</strong> A Safe Page está em <code>/safe</code> e a Oferta está na Raiz <code>/</code>. Configure isso no painel do TWR.
@@ -188,11 +186,18 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ marginTop: '30px', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '20px' }}>
-        <span style={{ color: config.gtmId ? 'var(--primary)' : 'var(--gray)' }}>{status}</span>
-        <button onClick={handleSave} className="btn-primary" style={{ minWidth: '200px' }} disabled={loading}>
-          {loading ? 'Processando...' : 'Salvar Campanha'}
-        </button>
+      <div style={{ marginTop: '30px', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+        {config.twrParams && (
+          <div style={{ fontSize: '11px', color: 'var(--primary)', background: 'rgba(0,255,136,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+            <strong>URL do Anúncio:</strong> https://play.ganhoubet.xyz/?{config.twrParams}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <span style={{ color: config.gtmId ? 'var(--primary)' : 'var(--gray)' }}>{status}</span>
+          <button onClick={handleSave} className="btn-primary" style={{ minWidth: '200px' }} disabled={loading}>
+            {loading ? 'Processando...' : 'Salvar Campanha'}
+          </button>
+        </div>
       </div>
     </div>
   );

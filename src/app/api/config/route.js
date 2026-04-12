@@ -28,7 +28,8 @@ async function getConfig() {
       affiliateLink: 'https://ganhou.bet/?register=true&campaign=300girospwatest',
       gtmId: 'GTM-PNLMZZ8V',
       appName: 'GanhouBet App',
-      pushMessages: []
+      pushMessages: [],
+      twrParams: ''
     };
   }
 }
