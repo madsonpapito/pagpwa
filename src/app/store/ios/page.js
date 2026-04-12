@@ -1,22 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 export default function IosStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
+  const [showIosTutorial, setShowIosTutorial] = useState(false);
+
+  useEffect(() => {
+    // Fetch real affiliate link from config
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.affiliateLink) setAffiliateLink(data.affiliateLink);
+      })
+      .catch(err => console.error('Failed to load config:', err));
+  }, []);
 
   const handleInstall = (e) => {
-    // Prevent any default behavior that might block the event
     if (e) e.preventDefault();
-    
-    console.log('OBTER clicked - Starting install simulation...');
-    
+    if (isInstalling) return;
+
     try {
       setIsInstalling(true);
       
-      // Safe DataLayer push
       if (typeof window !== 'undefined' && window.dataLayer) {
         window.dataLayer.push({ 
           event: 'pwa_install_click',
@@ -27,18 +35,37 @@ export default function IosStorePage() {
       let p = 0;
       const interval = setInterval(() => {
         p += 5;
+        if (p > 100) p = 100;
         setProgress(p);
+
         if (p >= 100) {
           clearInterval(interval);
-          console.log('Install simulation finished, redirecting...');
-          window.location.href = '/'; 
+          finishInstallation();
         }
       }, 100);
     } catch (err) {
-      console.error('Error during handleInstall:', err);
-      // Fallback: at least try to redirect if something crashes
-      window.location.href = '/';
+      console.error('Error during install:', err);
+      window.location.href = affiliateLink;
     }
+  };
+
+  const finishInstallation = async () => {
+    // 1. Request Push Permission immediately (high intent moment)
+    if ('Notification' in window) {
+      try {
+        await Notification.requestPermission();
+      } catch (e) {
+        console.warn('Notification permission failed');
+      }
+    }
+
+    // 2. Show iOS specific instructions (Standalone mode)
+    setShowIosTutorial(true);
+
+    // 3. Final Redirect after a small delay to allow reading the tutorial
+    setTimeout(() => {
+      window.location.href = affiliateLink;
+    }, 4000);
   };
 
   return (
@@ -73,7 +100,6 @@ export default function IosStorePage() {
         </div>
         <button 
           onClick={handleInstall}
-          onPointerDown={() => console.log('Pointer Down on GET')}
           style={{
             backgroundColor: '#007aff',
             color: '#ffffff',
@@ -83,7 +109,6 @@ export default function IosStorePage() {
             fontWeight: 'bold',
             border: 'none',
             cursor: 'pointer',
-            transition: 'opacity 0.2s',
             opacity: isInstalling ? 0.7 : 1
           }}
         >
@@ -124,26 +149,17 @@ export default function IosStorePage() {
                   opacity: isInstalling ? 0.7 : 1
                 }}
                >
-                {isInstalling ? 'BAIXANDO...' : 'OBTER'}
+                {isInstalling ? (progress === 100 ? 'CONCLUÍDO' : 'BAIXANDO...') : 'OBTER'}
                </button>
                <span style={{ fontSize: '10px', color: '#8e8e93', fontWeight: '600', textAlign: 'center', marginRight: '8px' }}>Compras <br/> no App</span>
             </div>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          padding: '16px 0', 
-          borderTop: '1px solid #f2f2f7', 
-          borderBottom: '1px solid #f2f2f7', 
-          marginBottom: '24px',
-          overflowX: 'auto',
-          gap: '20px'
-        }}>
+        {/* Stats Summary Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderTop: '1px solid #f2f2f7', borderBottom: '1px solid #f2f2f7', marginBottom: '24px', gap: '20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-            <span style={{ fontSize: '9px', color: '#8e8e93', fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' }}>64K AVALIAÇÕES</span>
+            <span style={{ fontSize: '9px', color: '#8e8e93', fontWeight: 'bold', textTransform: 'uppercase' }}>64K AVALIAÇÕES</span>
             <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#48484a', marginTop: '4px' }}>4.9</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, borderLeft: '1px solid #f2f2f7', borderRight: '1px solid #f2f2f7' }}>
@@ -156,44 +172,52 @@ export default function IosStorePage() {
           </div>
         </div>
 
+        {/* Tutorial Modal (Show after 100% on iOS) */}
+        {showIosTutorial && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '30px', padding: '30px', maxWidth: '350px' }}>
+              <div style={{ fontSize: '40px', marginBottom: '15px' }}>📲</div>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>Ative seu Bônus!</h2>
+              <p style={{ color: '#666', fontSize: '15px', lineHeight: 1.4, marginBottom: '20px' }}>
+                Clique no botão de <strong>Compartilhar</strong> abaixo e depois em <strong>"Adicionar à Tela de Início"</strong> para garantir seus 300 giros e alertas.
+              </p>
+              <div style={{ color: '#007aff', fontWeight: 'bold' }}>Redirecionando para a casa...</div>
+            </div>
+          </div>
+        )}
+
         {/* Screenshots Carrossel */}
         <div style={{ marginBottom: '32px' }}>
-           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1c1c1e' }}>Pré-visualização</h2>
-           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-              <div style={{ 
-                minWidth: '240px', 
-                height: '480px', 
-                borderRadius: '24px', 
-                overflow: 'hidden', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                border: '1px solid #f2f2f7' 
-              }}>
+           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Pré-visualização</h2>
+           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px' }}>
+              <div style={{ minWidth: '240px', height: '480px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f2f2f7' }}>
                 <img src="/images/screen-1.png" alt="Preview 1" style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
               </div>
-              <div style={{ 
-                minWidth: '240px', 
-                height: '480px', 
-                borderRadius: '24px', 
-                overflow: 'hidden', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                border: '1px solid #f2f2f7' 
-              }}>
+              <div style={{ minWidth: '240px', height: '480px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f2f2f7' }}>
                 <img src="/images/screen-2.png" alt="Preview 2" style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
               </div>
            </div>
         </div>
 
-        {/* Text Sections */}
+        {/* Novidades */}
         <div style={{ padding: '20px 0', borderTop: '1px solid #f2f2f7' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 12px', color: '#1c1c1e' }}>Novidades</h2>
-          <p style={{ fontSize: '14px', color: '#8e8e93', margin: '0 0 12px' }}>Versão 1.0.18 • há 5 dias</p>
-          <p style={{ fontSize: '15px', lineHeight: 1.5, color: '#1c1c1e' }}>
-            Otimizações no Fortune Tiger e suporte a pagamentos PIX instantâneos.
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 12px' }}>Novidades</h2>
+          <p style={{ fontSize: '15px', lineHeight: 1.5 }}>
+            Otimizações no Fortune Tiger e suporte a pagamentos PIX instantâneos com bônus acumulativo.
           </p>
-        </div>
-
-        <div style={{ marginTop: '40px', textAlign: 'center', opacity: 0.5, fontSize: '12px', color: '#8e8e93' }}>
-           <p>Copyright © 2026 GanhouBet Studio</p>
         </div>
       </div>
     </div>

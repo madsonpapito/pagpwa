@@ -1,17 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 export default function AndroidStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.affiliateLink) setAffiliateLink(data.affiliateLink);
+      })
+      .catch(err => console.error('Failed to load config:', err));
+  }, []);
 
   const handleInstall = (e) => {
     if (e) e.preventDefault();
-    
-    console.log('Install clicked (Android)...');
-    
+    if (isInstalling) return;
+
     try {
       setIsInstalling(true);
       if (typeof window !== 'undefined' && window.dataLayer) {
@@ -23,17 +31,35 @@ export default function AndroidStorePage() {
 
       let p = 0;
       const interval = setInterval(() => {
-        p += 2;
+        p += 4;
+        if (p > 100) p = 100;
         setProgress(p);
+
         if (p >= 100) {
           clearInterval(interval);
-          window.location.href = '/'; 
+          finishInstallation();
         }
       }, 50);
     } catch (err) {
       console.error('Error on Android Install:', err);
-      window.location.href = '/';
+      window.location.href = affiliateLink;
     }
+  };
+
+  const finishInstallation = async () => {
+    // 1. Request Push Permission
+    if ('Notification' in window) {
+      try {
+        await Notification.requestPermission();
+      } catch (e) {
+        console.warn('Notification permission denied');
+      }
+    }
+
+    // 2. Clear instructions and redirect
+    setTimeout(() => {
+      window.location.href = affiliateLink;
+    }, 1500);
   };
 
   return (
@@ -63,9 +89,6 @@ export default function AndroidStorePage() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           <span style={{ fontSize: '18px', fontWeight: '500', color: '#5f6368' }}>Google Play</span>
         </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </div>
       </header>
 
       <main style={{ padding: '24px' }}>
@@ -90,33 +113,10 @@ export default function AndroidStorePage() {
           </div>
         </div>
 
-        {/* Stats Summary Bar */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          marginBottom: '32px', 
-          overflowX: 'auto', 
-          gap: '24px',
-          padding: '8px 0',
-          scrollbarWidth: 'none'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, borderRight: '1px solid #e8eaed' }}>
-            <span style={{ fontSize: '14px', fontWeight: '500' }}>4.8 ★</span>
-            <span style={{ fontSize: '12px', color: '#5f6368' }}>64K reviews</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, borderRight: '1px solid #e8eaed' }}>
-            <span style={{ fontSize: '14px', fontWeight: '500' }}>92 MB</span>
-            <span style={{ fontSize: '12px', color: '#5f6368' }}>Tamanho</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-            <span style={{ fontSize: '14px', fontWeight: '500' }}>18+</span>
-            <span style={{ fontSize: '12px', color: '#5f6368' }}>Classificação</span>
-          </div>
-        </div>
-
         {/* Install Button */}
         <button 
           onClick={handleInstall}
+          disabled={isInstalling && progress === 100}
           style={{
             width: '100%',
             backgroundColor: '#01875f',
@@ -129,33 +129,17 @@ export default function AndroidStorePage() {
             cursor: 'pointer',
             marginBottom: '32px',
             position: 'relative',
-            overflow: 'hidden',
-            transition: 'filter 0.1s'
+            overflow: 'hidden'
           }}
         >
-          {isInstalling ? `${progress}% Concluído...` : 'Instalar'}
+          {isInstalling ? (progress === 100 ? 'CONCLUÍDO...' : `${progress}% Instalando...`) : 'Instalar'}
         </button>
-
-        {/* Tags */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {['Cassino', 'Casual', 'Simulação'].map(tag => (
-            <span key={tag} style={{ px: '12px', py: '6px', border: '1px solid #dadce0', borderRadius: '16px', fontSize: '14px', color: '#5f6368', padding: '6px 16px', whiteSpace: 'nowrap' }}>
-              {tag}
-            </span>
-          ))}
-        </div>
 
         {/* Screenshots Carrossel */}
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px', color: '#202124' }}>Sobre este jogo</h2>
-          <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-            <div style={{ 
-              minWidth: '190px', 
-              height: '340px', 
-              borderRadius: '8px', 
-              overflow: 'hidden', 
-              border: '1px solid #f1f3f4' 
-            }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px' }}>Sobre este jogo</h2>
+          <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }}>
+            <div style={{ minWidth: '190px', height: '340px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #f1f3f4' }}>
               <img src="/images/android-screen-1.png" alt="Preview" style={{ width: '190px', height: '340px', objectFit: 'cover' }} />
             </div>
           </div>
@@ -163,10 +147,10 @@ export default function AndroidStorePage() {
 
         {/* Security Section */}
         <div style={{ padding: '24px 0', borderTop: '1px solid #e8eaed' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px', color: '#202124' }}>Segurança de dados</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px' }}>Segurança de dados</h2>
           <div style={{ padding: '16px', border: '1px solid #dadce0', borderRadius: '8px', display: 'flex', gap: '16px' }}>
              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-             <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>Este PWA não compartilha dados com terceiros e utiliza proteção SSL de ponta.</p>
+             <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>Sua segurança é nossa prioridade. Este PWA é verificado e seguro.</p>
           </div>
         </div>
       </main>
