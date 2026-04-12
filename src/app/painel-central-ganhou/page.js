@@ -8,10 +8,11 @@ export default function AdminDashboard() {
   const [config, setConfig] = useState({
     affiliateLink: '',
     gtmId: '',
-    appName: '',
+    appName: 'GanhouBet',
     pushMessages: [],
     twrParams: '',
-    twrSlug: ''
+    twrSlug: '',
+    pixelId: ''
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -33,29 +34,25 @@ export default function AdminDashboard() {
     if (isLogged) {
       fetch('/api/config')
         .then(res => res.json())
-        .then(data => setConfig(data));
-    }
-  }, [isLogged]);
-
-  useEffect(() => {
-    if (isLogged) {
-        const fetchSubs = async () => {
-            try {
-                const res = await fetch('/api/push/send', { method: 'GET' });
-                const data = await res.json();
-                if (data.error === 'DB_NOT_CONFIGURED') {
-                    setDbError('⚠️ Banco de Dados (Redis) não conectado. Clique em "Connect Project" na Vercel.');
-                } else {
-                    setDbError(null);
-                    setSubCount(data.count || 0);
-                }
-            } catch (e) {
-                setDbError('❌ Falha na conexão com API.');
+        .then(data => setConfig(prev => ({ ...prev, ...data })));
+        
+      const fetchSubs = async () => {
+        try {
+            const res = await fetch('/api/push/send', { method: 'GET' });
+            const data = await res.json();
+            if (data.error === 'DB_NOT_CONFIGURED') {
+                setDbError('⚠️ Redis não conectado.');
+            } else {
+                setDbError(null);
+                setSubCount(data.count || 0);
             }
-        };
-        fetchSubs();
-        const interval = setInterval(fetchSubs, 10000);
-        return () => clearInterval(interval);
+        } catch (e) {
+            setDbError('❌ Falha na API.');
+        }
+      };
+      fetchSubs();
+      const interval = setInterval(fetchSubs, 10000);
+      return () => clearInterval(interval);
     }
   }, [isLogged]);
 
@@ -70,7 +67,7 @@ export default function AdminDashboard() {
         body: JSON.stringify(config)
       });
       if (res.ok) {
-        setStatus('✅ Salvo com sucesso!');
+        setStatus('✅ Configurações Salvas!');
         setTimeout(() => setStatus(''), 3000);
       }
     } catch (err) {
@@ -82,13 +79,11 @@ export default function AdminDashboard() {
 
   const handleBroadcast = async () => {
     if (subCount === 0) {
-        setPushStatus('⚠️ Nenhum assinante.');
+        setPushStatus('⚠️ Sem assinantes.');
         return;
     }
-
     setLoading(true);
-    setPushStatus('Enviando...');
-    
+    setPushStatus('Disparando...');
     try {
       const res = await fetch('/api/push/send', {
         method: 'POST',
@@ -99,80 +94,135 @@ export default function AdminDashboard() {
           url: config.affiliateLink
         })
       });
-      
       const data = await res.json();
-      
       if (data.success) {
-        setPushStatus(`✅ Enviado para ${data.sentCount} dispositivos!`);
+        setPushStatus(`✅ Sucesso! Enviado para ${data.sentCount} dispositivos.`);
         setTimeout(() => setPushStatus(''), 5000);
-      } else {
-        setPushStatus(`❌ Erro: ${data.error || 'Falha no envio'}`);
       }
     } catch (err) {
-      setPushStatus('❌ Erro crítico.');
+      setPushStatus('❌ Erro no envio.');
     } finally {
       setLoading(false);
     }
   };
 
   if (!isLogged) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0a0e12' }}>
-        <form className="premium-card animate-fade-in" style={{ width: '350px', background: '#1c252e', padding: '30px', borderRadius: '20px' }} onSubmit={handleLogin}>
-          <h2 style={{ marginBottom: '20px', textAlign: 'center', color: '#fff' }}>🔒 Operações GanhouBet</h2>
-          <input 
-            type="password" 
-            className="input-field" 
-            placeholder="Digite a senha" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff' }}
-          />
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#00ff88', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>Acessar Painel</button>
-        </form>
-      </div>
-    );
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#09090b', fontFamily: 'Inter, sans-serif' }}>
+          <form style={{ width: '380px', background: '#18181b', padding: '40px', borderRadius: '24px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onSubmit={handleLogin}>
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <div style={{ fontSize: '40px', marginBottom: '10px' }}>🛡️</div>
+                <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: '800' }}>Admin GanhouBet</h2>
+                <p style={{ color: '#71717a', fontSize: '14px' }}>Acesso restrito ao operador</p>
+            </div>
+            <input 
+              type="password" 
+              placeholder="Senha de Acesso" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: '100%', padding: '14px', marginBottom: '20px', borderRadius: '12px', background: '#09090b', border: '1px solid #3f3f46', color: '#fff', outline: 'none' }}
+            />
+            <button type="submit" style={{ width: '100%', padding: '14px', borderRadius: '12px', background: '#00ff88', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '16px' }}>Entrar no Painel</button>
+          </form>
+        </div>
+      );
   }
 
+  const InputGroup = ({ label, value, onChange, placeholder, type = "text" }) => (
+    <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+        <input 
+            type={type}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', transition: 'border 0.2s' }}
+        />
+    </div>
+  );
+
   return (
-    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', color: '#fff' }}>
-      <header style={{ marginBottom: '40px' }}>
-        <h1 style={{ color: '#00ff88' }}>Configuração PWA & Marketing</h1>
-        {dbError && <div style={{ background: 'rgba(255,0,0,0.1)', border: '1px solid #ff4444', padding: '10px', borderRadius: '10px', color: '#ff4444', marginTop: '10px', fontSize: '14px' }}>{dbError}</div>}
-      </header>
+    <div style={{ minHeight: '100vh', background: '#09090b', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+            <div>
+                <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0 }}>Central de Comando <span style={{ color: '#00ff88' }}>GanhouBet</span></h1>
+                <p style={{ color: '#71717a', marginTop: '5px' }}>Gerencie tráfego, cloaking e notificações inteligentes.</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '20px' }}>{subCount}</div>
+                <div style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase' }}>Assinantes Ativos</div>
+            </div>
+        </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="premium-card" style={{ background: '#1c252e', padding: '24px', borderRadius: '20px' }}>
-              <h3 style={{ marginBottom: '20px' }}>Geral</h3>
-              <label style={{ display: 'block', marginBottom: '8px' }}>Nome do App</label>
-              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px' }} value={config.appName} onChange={e => setConfig({...config, appName: e.target.value})} />
-              <label style={{ display: 'block', marginBottom: '8px' }}>Link de Afiliado</label>
-              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} value={config.affiliateLink} onChange={e => setConfig({...config, affiliateLink: e.target.value})} />
-          </div>
+        {dbError && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', padding: '15px 20px', borderRadius: '16px', color: '#f87171', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🚫</span> {dbError}
+            </div>
+        )}
 
-          <div className="premium-card" style={{ background: '#1c252e', padding: '24px', borderRadius: '20px', border: dbError ? '1px solid #ff4444' : '1px solid #333' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3>Push Broadcast</h3>
-                  <span style={{ color: '#00ff88', fontWeight: 'bold' }}>{subCount} Ativos</span>
-              </div>
-              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px' }} placeholder="Título" value={pushForm.title} onChange={e => setPushForm({...pushForm, title: e.target.value})} />
-              <textarea style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', minHeight: '80px' }} placeholder="Sua mensagem..." value={pushForm.body} onChange={e => setPushForm({...pushForm, body: e.target.value})} />
-              
-              <div style={{ margin: '10px 0', fontSize: '13px', color: '#00ff88' }}>{pushStatus}</div>
-              
-              <button 
-                onClick={handleBroadcast} 
-                style={{ width: '100%', padding: '12px', borderRadius: '10px', background: (loading || subCount === 0) ? '#333' : '#00ff88', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
-                disabled={loading || subCount === 0 || dbError}
-              >
-                {loading ? 'Disparando...' : (subCount === 0 ? 'Sem Assinantes' : '🚀 Enviar Agora')}
-              </button>
-          </div>
-      </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+            
+            {/* Coluna 1: Marketing & Tracking */}
+            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>📈 Marketing & Tracking</h3>
+                <InputGroup label="Link de Afiliado (CPA)" value={config.affiliateLink} onChange={v => setConfig({...config, affiliateLink: v})} placeholder="https://ganhou.bet/..." />
+                <InputGroup label="Google Tag Manager (GTM)" value={config.gtmId} onChange={v => setConfig({...config, gtmId: v})} placeholder="GTM-XXXXXXX" />
+                <InputGroup label="Facebook Pixel ID" value={config.pixelId} onChange={v => setConfig({...config, pixelId: v})} placeholder="Somente os números" />
+                <InputGroup label="Identificador do App" value={config.appName} onChange={v => setConfig({...config, appName: v})} placeholder="Ex: GanhouBet App" />
+            </div>
 
-      <div style={{ marginTop: '30px', textAlign: 'right' }}>
-          <span style={{ marginRight: '15px', color: '#00ff88' }}>{status}</span>
-          <button onClick={handleSave} style={{ padding: '10px 30px', borderRadius: '10px', background: '#00ff88', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Salvar Configuração</button>
+            {/* Coluna 2: Cloaking (The White Rabbit) */}
+            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>🐇 Cloaking (TWR)</h3>
+                <InputGroup label="Slug do TWR" value={config.twrSlug} onChange={v => setConfig({...config, twrSlug: v})} placeholder="Ex: ganhou-home" />
+                <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>PARÂMETROS UTM (OPCIONAL)</label>
+                <textarea 
+                    value={config.twrParams}
+                    onChange={e => setConfig({...config, twrParams: e.target.value})}
+                    placeholder="utm_source=google&utm_campaign=..."
+                    style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', minHeight: '120px' }}
+                />
+            </div>
+
+            {/* Coluna 3: Push Real-Time */}
+            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#00ff88' }}></div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>🔔 Push Broadcast</h3>
+                <InputGroup label="Título da Mensagem" value={pushForm.title} onChange={v => setPushForm({...pushForm, title: v})} placeholder="Ex: 🎰 Bônus Exclusivo!" />
+                <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>MENSAGEM</label>
+                <textarea 
+                    value={pushForm.body}
+                    onChange={e => setPushForm({...pushForm, body: e.target.value})}
+                    placeholder="Sua oferta matadora aqui..."
+                    style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', minHeight: '100px', marginBottom: '15px' }}
+                />
+                
+                <div style={{ fontSize: '13px', color: '#00ff88', minHeight: '20px', marginBottom: '10px' }}>{pushStatus}</div>
+
+                <button 
+                    onClick={handleBroadcast}
+                    disabled={loading || subCount === 0 || dbError}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', background: (subCount > 0 && !dbError) ? '#00ff88' : '#27272a', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+                >
+                    {loading ? 'Processando...' : (subCount === 0 ? 'Aguardando Assinantes' : '🚀 Disparar para Todos Agora')}
+                </button>
+            </div>
+
+        </div>
+
+        <footer style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}>
+            <span style={{ color: '#00ff88', fontSize: '14px', fontWeight: 'bold' }}>{status}</span>
+            <button 
+                onClick={handleSave} 
+                className="btn-primary" 
+                style={{ padding: '15px 40px', borderRadius: '14px', background: '#fff', color: '#000', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 20px -5px rgba(255,255,255,0.2)' }}
+            >
+                Salvar Configurações
+            </button>
+        </footer>
+
       </div>
     </div>
   );
