@@ -7,24 +7,38 @@ export default function IosStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const handleInstall = () => {
-    setIsInstalling(true);
-    if (window.dataLayer) {
-      window.dataLayer.push({ 
-        event: 'pwa_install_click',
-        platform: 'ios'
-      });
-    }
-
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 5;
-      setProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        window.location.href = '/'; 
+  const handleInstall = (e) => {
+    // Prevent any default behavior that might block the event
+    if (e) e.preventDefault();
+    
+    console.log('OBTER clicked - Starting install simulation...');
+    
+    try {
+      setIsInstalling(true);
+      
+      // Safe DataLayer push
+      if (typeof window !== 'undefined' && window.dataLayer) {
+        window.dataLayer.push({ 
+          event: 'pwa_install_click',
+          platform: 'ios'
+        });
       }
-    }, 100);
+
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 5;
+        setProgress(p);
+        if (p >= 100) {
+          clearInterval(interval);
+          console.log('Install simulation finished, redirecting...');
+          window.location.href = '/'; 
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error during handleInstall:', err);
+      // Fallback: at least try to redirect if something crashes
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -59,6 +73,7 @@ export default function IosStorePage() {
         </div>
         <button 
           onClick={handleInstall}
+          onPointerDown={() => console.log('Pointer Down on GET')}
           style={{
             backgroundColor: '#007aff',
             color: '#ffffff',
@@ -67,7 +82,9 @@ export default function IosStorePage() {
             fontSize: '14px',
             fontWeight: 'bold',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'opacity 0.2s',
+            opacity: isInstalling ? 0.7 : 1
           }}
         >
           {isInstalling ? `${progress}%` : 'OBTER'}
@@ -103,7 +120,8 @@ export default function IosStorePage() {
                   fontSize: '16px',
                   fontWeight: 'bold',
                   border: 'none',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  opacity: isInstalling ? 0.7 : 1
                 }}
                >
                 {isInstalling ? 'BAIXANDO...' : 'OBTER'}
@@ -141,7 +159,7 @@ export default function IosStorePage() {
         {/* Screenshots Carrossel */}
         <div style={{ marginBottom: '32px' }}>
            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1c1c1e' }}>Pré-visualização</h2>
-           <div className="no-scrollbar" style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px' }}>
+           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
               <div style={{ 
                 minWidth: '240px', 
                 height: '480px', 
@@ -178,11 +196,6 @@ export default function IosStorePage() {
            <p>Copyright © 2026 GanhouBet Studio</p>
         </div>
       </div>
-
-      <style jsx global>{`
-        body { background-color: white !important; color: #1c1c1e !important; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 }

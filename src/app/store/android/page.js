@@ -7,24 +7,33 @@ export default function AndroidStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const handleInstall = () => {
-    setIsInstalling(true);
-    if (window.dataLayer) {
-      window.dataLayer.push({ 
-        event: 'pwa_install_click',
-        platform: 'android'
-      });
-    }
-
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 2;
-      setProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        window.location.href = '/'; 
+  const handleInstall = (e) => {
+    if (e) e.preventDefault();
+    
+    console.log('Install clicked (Android)...');
+    
+    try {
+      setIsInstalling(true);
+      if (typeof window !== 'undefined' && window.dataLayer) {
+        window.dataLayer.push({ 
+          event: 'pwa_install_click',
+          platform: 'android'
+        });
       }
-    }, 50);
+
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 2;
+        setProgress(p);
+        if (p >= 100) {
+          clearInterval(interval);
+          window.location.href = '/'; 
+        }
+      }, 50);
+    } catch (err) {
+      console.error('Error on Android Install:', err);
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -88,8 +97,9 @@ export default function AndroidStorePage() {
           marginBottom: '32px', 
           overflowX: 'auto', 
           gap: '24px',
-          padding: '8px 0'
-        }} className="no-scrollbar">
+          padding: '8px 0',
+          scrollbarWidth: 'none'
+        }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, borderRight: '1px solid #e8eaed' }}>
             <span style={{ fontSize: '14px', fontWeight: '500' }}>4.8 ★</span>
             <span style={{ fontSize: '12px', color: '#5f6368' }}>64K reviews</span>
@@ -119,14 +129,15 @@ export default function AndroidStorePage() {
             cursor: 'pointer',
             marginBottom: '32px',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            transition: 'filter 0.1s'
           }}
         >
           {isInstalling ? `${progress}% Concluído...` : 'Instalar'}
         </button>
 
         {/* Tags */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', overflowX: 'auto' }} className="no-scrollbar">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {['Cassino', 'Casual', 'Simulação'].map(tag => (
             <span key={tag} style={{ px: '12px', py: '6px', border: '1px solid #dadce0', borderRadius: '16px', fontSize: '14px', color: '#5f6368', padding: '6px 16px', whiteSpace: 'nowrap' }}>
               {tag}
@@ -137,7 +148,7 @@ export default function AndroidStorePage() {
         {/* Screenshots Carrossel */}
         <div style={{ marginBottom: '40px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px', color: '#202124' }}>Sobre este jogo</h2>
-          <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }} className="no-scrollbar">
+          <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
             <div style={{ 
               minWidth: '190px', 
               height: '340px', 
@@ -159,11 +170,6 @@ export default function AndroidStorePage() {
           </div>
         </div>
       </main>
-
-      <style jsx global>{`
-        body { background-color: white !important; color: #202124 !important; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 }
