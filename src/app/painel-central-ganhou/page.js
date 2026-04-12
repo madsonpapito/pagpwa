@@ -15,6 +15,8 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
+  const [pushForm, setPushForm] = useState({ title: '', body: '' });
+  const [pushStatus, setPushStatus] = useState('');
 
   // Handle Login (Simple demo password)
   const handleLogin = (e) => {
@@ -62,6 +64,31 @@ export default function AdminDashboard() {
       ...config,
       pushMessages: [...config.pushMessages, { id: Date.now(), time: '', text: '' }]
     });
+  };
+
+  const handleBroadcast = async () => {
+    setLoading(true);
+    setPushStatus('Enviando...');
+    try {
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: pushForm.title || config.appName,
+          body: pushForm.body,
+          url: config.affiliateLink
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPushStatus(`✅ Enviado para ${data.sentCount} dispositivos!`);
+        setTimeout(() => setPushStatus(''), 5000);
+      }
+    } catch (err) {
+      setPushStatus('❌ Erro no disparo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const removePush = (id) => {
@@ -209,6 +236,45 @@ export default function AdminDashboard() {
             ))}
           </div>
           <button onClick={addPush} className="btn-outline" style={{ width: '100%', marginBottom: '10px' }}>+ Adicionar Notificação</button>
+        </div>
+
+        {/* Real Push Broadcast Section */}
+        <div className="premium-card" style={{ gridColumn: 'span 2', border: '1px solid var(--primary)' }}>
+          <h3 style={{ marginBottom: '20px', color: 'var(--primary)' }}>🚀 Disparar Notificação Real (Broadcast)</h3>
+          <p style={{ fontSize: '13px', color: 'var(--gray)', marginBottom: '20px' }}>
+            Esta mensagem será enviada **instantaneamente** para todos os usuários que aceitaram notificações, mesmo com o navegador fechado.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div>
+              <label>Título do Push</label>
+              <input 
+                className="input-field" 
+                placeholder="Ex: 🎰 Bônus Liberado!"
+                value={pushForm.title}
+                onChange={e => setPushForm({...pushForm, title: e.target.value})}
+              />
+            </div>
+            <div>
+              <label>Mensagem</label>
+              <input 
+                className="input-field" 
+                placeholder="Ex: O Touro está solto! Recupere sua sorte agora."
+                value={pushForm.body}
+                onChange={e => setPushForm({...pushForm, body: e.target.value})}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--primary)' }}>{pushStatus}</span>
+            <button 
+              onClick={handleBroadcast} 
+              className="btn-primary" 
+              style={{ width: '300px', background: 'linear-gradient(45deg, #00ff88, #00ccff)' }}
+              disabled={loading || !pushForm.body}
+            >
+              {loading ? 'Enviando...' : '🚀 Enviar para Todos Agora'}
+            </button>
+          </div>
         </div>
       </div>
 
