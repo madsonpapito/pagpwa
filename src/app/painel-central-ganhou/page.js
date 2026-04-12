@@ -13,7 +13,8 @@ export default function AdminDashboard() {
     funnel: [],
     twrParams: '',
     twrSlug: '',
-    pixelId: ''
+    pixelId: '',
+    campaignDomain: '' // [NEW] Campo para bater com TWR
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -21,7 +22,6 @@ export default function AdminDashboard() {
   const [pushStatus, setPushStatus] = useState('');
   const [subCount, setSubCount] = useState(0);
   const [dbError, setDbError] = useState(null);
-  const [origin, setOrigin] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -33,8 +33,11 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     if (isLogged) {
+      if (!config.campaignDomain) {
+          setConfig(prev => ({ ...prev, campaignDomain: window.location.hostname }));
+      }
+      
       fetch('/api/config')
         .then(res => res.json())
         .then(data => setConfig(prev => ({ ...prev, ...data })));
@@ -125,7 +128,9 @@ export default function AdminDashboard() {
     });
   };
 
-  const finalUrl = `${origin}/${config.twrSlug}${config.twrParams ? (config.twrParams.startsWith('?') ? '' : '?') + config.twrParams : ''}`;
+  // Lógica inteligente de URL final
+  const domain = config.campaignDomain || (typeof window !== 'undefined' ? window.location.hostname : '');
+  const finalUrl = `https://${domain}/${config.twrSlug}${config.twrParams ? (config.twrParams.startsWith('?') ? '' : '?') + config.twrParams : ''}`;
 
   if (!isLogged) {
       return (
@@ -195,6 +200,7 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px' }}>🐇 Cloaking (The White Rabbit)</h3>
+                    <InputGroup label="Domínio da Campanha" value={config.campaignDomain} onChange={v => setConfig({...config, campaignDomain: v})} placeholder="Ex: play.ganhoubet.xyz" />
                     <InputGroup label="Slug Principal" value={config.twrSlug} onChange={v => setConfig({...config, twrSlug: v})} placeholder="Ex: pwa-home" />
                     <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>UTM PARAMS</label>
                     <textarea 
@@ -279,7 +285,7 @@ export default function AdminDashboard() {
                     Copiar Link
                 </button>
             </div>
-            <p style={{ marginTop: '10px', fontSize: '12px', color: '#71717a' }}>Use esta URL nas suas campanhas de Facebook/Google Ads com o Cloaking ativo.</p>
+            <p style={{ marginTop: '10px', fontSize: '12px', color: '#71717a' }}>Certifique-se que o domínio acima é o mesmo configurado no seu TWR.</p>
         </div>
 
         <footer style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}>
