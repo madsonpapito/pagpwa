@@ -21,6 +21,7 @@ export default function AdminDashboard() {
   const [pushStatus, setPushStatus] = useState('');
   const [subCount, setSubCount] = useState(0);
   const [dbError, setDbError] = useState(null);
+  const [origin, setOrigin] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    setOrigin(window.location.origin);
     if (isLogged) {
       fetch('/api/config')
         .then(res => res.json())
@@ -123,6 +125,8 @@ export default function AdminDashboard() {
     });
   };
 
+  const finalUrl = `${origin}/${config.twrSlug}${config.twrParams ? (config.twrParams.startsWith('?') ? '' : '?') + config.twrParams : ''}`;
+
   if (!isLogged) {
       return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#09090b', fontFamily: 'Inter, sans-serif' }}>
@@ -201,7 +205,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* Coluna 2: Funil Automático (REQUISITADO) */}
+            {/* Coluna 2: Funil Automático */}
             <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700' }}>🚀 Funil de Notificações</h3>
@@ -216,7 +220,6 @@ export default function AdminDashboard() {
                                 <button onClick={() => removeFunnelStep(step.id)} style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Remover</button>
                             </div>
                             <input 
-                                className="input-f" 
                                 style={{ width: '100%', padding: '8px', background: 'transparent', border: 'none', borderBottom: '1px solid #27272a', color: '#fff', marginBottom: '8px', outline: 'none' }} 
                                 placeholder="Título" 
                                 value={step.title} 
@@ -239,7 +242,6 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     ))}
-                    {config.funnel.length === 0 && <p style={{ color: '#71717a', fontSize: '14px', textAlign: 'center' }}>Nenhum fluxo configurado.</p>}
                 </div>
             </div>
 
@@ -254,7 +256,6 @@ export default function AdminDashboard() {
                     placeholder="Sua oferta matadora aqui..."
                     style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', minHeight: '100px', marginBottom: '15px' }}
                 />
-                <div style={{ fontSize: '13px', color: '#00ff88', minHeight: '20px', marginBottom: '10px' }}>{pushStatus}</div>
                 <button 
                     onClick={handleBroadcast}
                     disabled={loading || subCount === 0 || dbError}
@@ -262,9 +263,23 @@ export default function AdminDashboard() {
                 >
                     {loading ? 'Disparando...' : '🚀 Enviar Manual Agora'}
                 </button>
-                <p style={{ marginTop: '15px', fontSize: '11px', color: '#71717a', textAlign: 'center' }}>Isso dispara para TODOS os assinantes ativos instantaneamente.</p>
+                <div style={{ fontSize: '13px', color: '#00ff88', marginTop: '10px', minHeight: '20px' }}>{pushStatus}</div>
             </div>
 
+        </div>
+
+        <div style={{ marginTop: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0, 255, 136, 0.05)', padding: '30px', borderRadius: '24px', border: '1px dashed #00ff88' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#00ff88', textTransform: 'uppercase', marginBottom: '15px' }}>🔗 Link de Campanha Gerado</h2>
+            <div style={{ width: '100%', background: '#09090b', padding: '15px', borderRadius: '12px', border: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <code style={{ color: '#00ff88', fontSize: '14px', wordBreak: 'break-all' }}>{finalUrl}</code>
+                <button 
+                    onClick={() => { navigator.clipboard.writeText(finalUrl); setStatus('📋 Link Copiado!'); setTimeout(() => setStatus(''), 2000); }}
+                    style={{ background: '#00ff88', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', marginLeft: '15px' }}
+                >
+                    Copiar Link
+                </button>
+            </div>
+            <p style={{ marginTop: '10px', fontSize: '12px', color: '#71717a' }}>Use esta URL nas suas campanhas de Facebook/Google Ads com o Cloaking ativo.</p>
         </div>
 
         <footer style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}>
