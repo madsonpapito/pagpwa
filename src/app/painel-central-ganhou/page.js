@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState('');
   const [pushForm, setPushForm] = useState({ title: '', body: '' });
   const [pushStatus, setPushStatus] = useState('');
+  const [subCount, setSubCount] = useState(0);
 
   // Handle Login (Simple demo password)
   const handleLogin = (e) => {
@@ -35,6 +36,20 @@ export default function AdminDashboard() {
         .then(data => setConfig(data));
     }
   }, [isLogged]);
+
+  // Fetch Subscriber Count
+  useEffect(() => {
+    if (isLogged) {
+        const fetchSubs = async () => {
+            try {
+                const res = await fetch('/api/push/send', { method: 'GET' }); // I need to add GET handler to push/send
+                const data = await res.json();
+                setSubCount(data.count || 0);
+            } catch (e) {}
+        };
+        fetchSubs();
+    }
+  }, [isLogged, pushStatus]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -240,7 +255,12 @@ export default function AdminDashboard() {
 
         {/* Real Push Broadcast Section */}
         <div className="premium-card" style={{ gridColumn: 'span 2', border: '1px solid var(--primary)' }}>
-          <h3 style={{ marginBottom: '20px', color: 'var(--primary)' }}>🚀 Disparar Notificação Real (Broadcast)</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h3 style={{ color: 'var(--primary)' }}>🚀 Disparar Notificação Real (Broadcast)</h3>
+            <div style={{ background: 'rgba(0,255,136,0.1)', padding: '5px 15px', borderRadius: '20px', fontSize: '12px', color: 'var(--primary)', border: '1px solid var(--primary)' }}>
+                <strong>{subCount}</strong> Dispositivos Assinados
+            </div>
+          </div>
           <p style={{ fontSize: '13px', color: 'var(--gray)', marginBottom: '20px' }}>
             Esta mensagem será enviada **instantaneamente** para todos os usuários que aceitaram notificações, mesmo com o navegador fechado.
           </p>

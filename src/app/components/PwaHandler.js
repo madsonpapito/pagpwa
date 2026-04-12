@@ -18,10 +18,15 @@ export default function PwaHandler() {
       });
     }
 
-    // 2. Request Notification Permission
+    // 2. Request Notification Permission & Subscribe Immediately
     if ('Notification' in window && Notification.permission === 'default') {
       setTimeout(() => {
-        Notification.requestPermission();
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('🔔 Permission granted! Subscribing...');
+            subscribeUser();
+          }
+        });
       }, 5000); // Ask after 5 seconds
     }
 
@@ -29,7 +34,11 @@ export default function PwaHandler() {
     const subscribeUser = async () => {
       if ('serviceWorker' in navigator) {
         try {
+          // Wait for registration to be ready (Crucial for mobile)
           const registration = await navigator.serviceWorker.ready;
+          
+          // Force a small delay to ensure SW is active on slow devices
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Check for existing subscription
           const existingSubscription = await registration.pushManager.getSubscription();

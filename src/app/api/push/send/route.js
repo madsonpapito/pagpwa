@@ -9,6 +9,15 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY || 'j_yYHfM1MmtdfB3QoFl7ZXJXGcWCasWacX_E1EFh-jA'
 );
 
+export async function GET() {
+  try {
+    const subscriptions = await kv.get('push_subscriptions') || [];
+    return NextResponse.json({ count: subscriptions.length });
+  } catch (err) {
+    return NextResponse.json({ count: 0 });
+  }
+}
+
 export async function POST(req) {
   try {
     const { title, body, url } = await req.json();
@@ -24,8 +33,16 @@ export async function POST(req) {
       url: url || 'https://play.ganhoubet.xyz/'
     });
 
+    console.log(`🚀 Inciando Broadcast para ${subscriptions.length} inscritos...`);
+
     const results = await Promise.allSettled(
-        subscriptions.map(sub => webpush.sendNotification(sub, payload))
+        subscriptions.map((sub, index) => 
+            webpush.sendNotification(sub, payload)
+              .catch(err => {
+                console.error(`❌ Falha no envio para inscrito ${index}:`, err.statusCode);
+                throw err;
+              })
+        )
     );
 
     // Limpeza de assinaturas inválidas (expiradas ou removidas pelo browser)
