@@ -53,6 +53,16 @@ export default function PwaHandler() {
     };
 
     scheduleRemarketing();
+    // 4. Detect Push Click and fire GTM Event
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('utm_medium') === 'push_click') {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'push_notification_click',
+        campaign: urlParams.get('utm_campaign') || 'remarketing_pwa'
+      });
+      console.log('Push Click Detected - GTM Event Fired');
+    }
   }, []);
 
   return null;

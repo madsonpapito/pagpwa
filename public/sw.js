@@ -12,8 +12,15 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  
+  let url = event.notification.data.url || '/';
+  
+  // Append Tracking Parameters
+  const trackingParams = 'utm_source=pwa&utm_medium=push_click&utm_campaign=remarketing_pwa';
+  url += (url.includes('?') ? '&' : '?') + trackingParams;
+
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.openWindow(url)
   );
 });
 
