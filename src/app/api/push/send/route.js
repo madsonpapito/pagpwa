@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 import webpush from 'web-push';
+
+let redisClient = null;
+
+async function getRedisClient() {
+  if (redisClient) return redisClient;
+  const client = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  client.on('error', (err) => console.error('Redis Client Error', err));
+  await client.connect();
+  redisClient = client;
+  return redisClient;
+}
 
 // Configurar VAPID
 webpush.setVapidDetails(
@@ -11,27 +24,31 @@ webpush.setVapidDetails(
 
 export async function GET() {
   try {
-    // DIAGNÓSTICO: Verificar se KV está configurado
-    if (!process.env.KV_REST_API_URL) {
-        return NextResponse.json({ error: 'DB_NOT_CONFIGURED', details: 'Falta conectar o KV no Storage da Vercel' }, { status: 500 });
+    if (!process.env.REDIS_URL) {
+        return NextResponse.json({ error: 'DB_NOT_CONFIGURED', details: 'Falta conectar o Redis no Storage da Vercel' }, { status: 500 });
     }
 
-    const subscriptions = await kv.get('push_subscriptions') || [];
+    const redis = await getRedisClient();
+    const data = await redis.get('push_subscriptions');
+    const subscriptions = data ? JSON.parse(data) : [];
+    
     return NextResponse.json({ count: subscriptions.length });
   } catch (err) {
-    console.error('KV GET Error:', err);
+    console.error('Redis GET Error:', err);
     return NextResponse.json({ count: 0, error: err.message });
   }
 }
 
 export async function POST(req) {
   try {
-    if (!process.env.KV_REST_API_URL) {
+    if (!process.env.REDIS_URL) {
         return NextResponse.json({ error: 'DB_NOT_CONFIGURED' }, { status: 500 });
     }
 
     const { title, body, url } = await req.json();
-    const subscriptions = await kv.get('push_subscriptions') || [];
+    const redis = await getRedisClient();
+    const data = await redis.get('push_subscriptions');
+    const subscriptions = data ? JSON.parse(data) : [];
 
     if (subscriptions.length === 0) {
       return NextResponse.json({ success: true, message: 'Nenhum assinante encontrado.', sentCount: 0 });
@@ -39,7 +56,7 @@ export async function POST(req) {
 
     const payload = JSON.stringify({
       title: title || 'GanhouBet',
-      body: body || '🎰 Bônus disponível!',
+      body: body || '🎰 O Touro está solto! Recupere sua sorte agora.',
       url: url || 'https://play.ganhoubet.xyz/'
     });
 
@@ -54,7 +71,7 @@ export async function POST(req) {
 
     if (invalidEndpoints.length > 0) {
         const updatedSubs = subscriptions.filter(s => !invalidEndpoints.includes(s.endpoint));
-        await kv.set('push_subscriptions', updatedSubs);
+        await redis.set('push_subscriptions', JSON.stringify(updatedSubs));
     }
 
     return NextResponse.json({ 

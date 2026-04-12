@@ -44,7 +44,7 @@ export default function AdminDashboard() {
                 const res = await fetch('/api/push/send', { method: 'GET' });
                 const data = await res.json();
                 if (data.error === 'DB_NOT_CONFIGURED') {
-                    setDbError('⚠️ Banco de Dados (KV) não conectado.');
+                    setDbError('⚠️ Banco de Dados (Redis) não conectado. Clique em "Connect Project" na Vercel.');
                 } else {
                     setDbError(null);
                     setSubCount(data.count || 0);
