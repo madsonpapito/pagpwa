@@ -1,0 +1,10 @@
+{
+  "affiliateLink": "https://ganhou.bet/?register=true&campaign=300girospwatest",
+  "gtmId": "GTM-PNLMZZ8V",
+  "appName": "GanhouBet App",
+  "pushMessages": [
+    { "id": 1, "time": "2h", "text": "🎁 300 Giros Grátis esperando por você!" },
+    { "id": 2, "time": "12h", "text": "⚠️ Seu bônus de boas-vindas expira em breve." },
+    { "id": 3, "time": "24h", "text": "🎰 O Touro está solto! Recupere sua sorte agora." }
+  ]
+}
