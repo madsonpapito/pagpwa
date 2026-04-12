@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { subscribeUser } from '../../utils/push';
 
 export default function AndroidStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
@@ -31,7 +32,7 @@ export default function AndroidStorePage() {
 
       let p = 0;
       const interval = setInterval(() => {
-        p += 4;
+        p += 10; // Faster for testing
         if (p > 100) p = 100;
         setProgress(p);
 
@@ -39,7 +40,7 @@ export default function AndroidStorePage() {
           clearInterval(interval);
           finishInstallation();
         }
-      }, 50);
+      }, 80);
     } catch (err) {
       console.error('Error on Android Install:', err);
       window.location.href = affiliateLink;
@@ -50,9 +51,13 @@ export default function AndroidStorePage() {
     // 1. Request Push Permission
     if ('Notification' in window) {
       try {
-        await Notification.requestPermission();
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Permission granted! Subscribing device...');
+            await subscribeUser(); // ACTION: Real time sync
+        }
       } catch (e) {
-        console.warn('Notification permission denied');
+        console.warn('Notification permission failed');
       }
     }
 
@@ -135,22 +140,29 @@ export default function AndroidStorePage() {
           {isInstalling ? (progress === 100 ? 'CONCLUÍDO...' : `${progress}% Instalando...`) : 'Instalar'}
         </button>
 
-        {/* Screenshots Carrossel */}
+        {/* Info Items */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #f1f3f4', paddingBottom: '24px', marginBottom: '24px', gap: '24px', overflowX: 'auto' }}>
+            <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>4.8 ★</div>
+                <div style={{ fontSize: '12px', color: '#5f6368' }}>Reviews</div>
+            </div>
+            <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>100K+</div>
+                <div style={{ fontSize: '12px', color: '#5f6368' }}>Downloads</div>
+            </div>
+            <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>18+</div>
+                <div style={{ fontSize: '12px', color: '#5f6368' }}>Classificação</div>
+            </div>
+        </div>
+
+        {/* Screenshots */}
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px' }}>Sobre este jogo</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px' }}>Imagens do app</h2>
           <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }}>
             <div style={{ minWidth: '190px', height: '340px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #f1f3f4' }}>
               <img src="/images/android-screen-1.png" alt="Preview" style={{ width: '190px', height: '340px', objectFit: 'cover' }} />
             </div>
-          </div>
-        </div>
-
-        {/* Security Section */}
-        <div style={{ padding: '24px 0', borderTop: '1px solid #e8eaed' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '500', marginBottom: '16px' }}>Segurança de dados</h2>
-          <div style={{ padding: '16px', border: '1px solid #dadce0', borderRadius: '8px', display: 'flex', gap: '16px' }}>
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f6368" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-             <p style={{ fontSize: '14px', color: '#5f6368', margin: 0 }}>Sua segurança é nossa prioridade. Este PWA é verificado e seguro.</p>
           </div>
         </div>
       </main>
