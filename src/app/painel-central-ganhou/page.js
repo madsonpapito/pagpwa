@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [pushForm, setPushForm] = useState({ title: '', body: '' });
   const [pushStatus, setPushStatus] = useState('');
   const [subCount, setSubCount] = useState(0);
+  const [dbError, setDbError] = useState(null);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -42,13 +43,18 @@ export default function AdminDashboard() {
             try {
                 const res = await fetch('/api/push/send', { method: 'GET' });
                 const data = await res.json();
-                setSubCount(data.count || 0);
+                if (data.error === 'DB_NOT_CONFIGURED') {
+                    setDbError('⚠️ Banco de Dados (KV) não conectado.');
+                } else {
+                    setDbError(null);
+                    setSubCount(data.count || 0);
+                }
             } catch (e) {
-                console.error('Fetch count failed');
+                setDbError('❌ Falha na conexão com API.');
             }
         };
         fetchSubs();
-        const interval = setInterval(fetchSubs, 10000); // Poll every 10s
+        const interval = setInterval(fetchSubs, 10000);
         return () => clearInterval(interval);
     }
   }, [isLogged]);
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
 
   const handleBroadcast = async () => {
     if (subCount === 0) {
-        setPushStatus('⚠️ Nenhum assinante para enviar.');
+        setPushStatus('⚠️ Nenhum assinante.');
         return;
     }
 
@@ -97,17 +103,13 @@ export default function AdminDashboard() {
       const data = await res.json();
       
       if (data.success) {
-        if (data.sentCount > 0) {
-            setPushStatus(`✅ Enviado para ${data.sentCount} dispositivos!`);
-        } else {
-            setPushStatus(`ℹ️ ${data.message || 'Sem disparos realizados.'}`);
-        }
+        setPushStatus(`✅ Enviado para ${data.sentCount} dispositivos!`);
         setTimeout(() => setPushStatus(''), 5000);
       } else {
         setPushStatus(`❌ Erro: ${data.error || 'Falha no envio'}`);
       }
     } catch (err) {
-      setPushStatus('❌ Erro crítico no disparo.');
+      setPushStatus('❌ Erro crítico.');
     } finally {
       setLoading(false);
     }
@@ -115,62 +117,62 @@ export default function AdminDashboard() {
 
   if (!isLogged) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <form className="premium-card animate-fade-in" style={{ width: '350px' }} onSubmit={handleLogin}>
-          <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>🔒 Painel GanhouBet</h2>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0a0e12' }}>
+        <form className="premium-card animate-fade-in" style={{ width: '350px', background: '#1c252e', padding: '30px', borderRadius: '20px' }} onSubmit={handleLogin}>
+          <h2 style={{ marginBottom: '20px', textAlign: 'center', color: '#fff' }}>🔒 Operações GanhouBet</h2>
           <input 
             type="password" 
             className="input-field" 
             placeholder="Digite a senha" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff' }}
           />
-          <button type="submit" className="btn-primary" style={{ width: '100%' }}>Acessar Configurações</button>
+          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#00ff88', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>Acessar Painel</button>
         </form>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-      {/* ... (Previous Styles Apply - skipping redundant visual code components for brevity in this block but keeping structure) */}
-      <h1 style={{ color: 'var(--primary)', marginBottom: '30px' }}>Dashboard de Operações</h1>
-      
+    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', color: '#fff' }}>
+      <header style={{ marginBottom: '40px' }}>
+        <h1 style={{ color: '#00ff88' }}>Configuração PWA & Marketing</h1>
+        {dbError && <div style={{ background: 'rgba(255,0,0,0.1)', border: '1px solid #ff4444', padding: '10px', borderRadius: '10px', color: '#ff4444', marginTop: '10px', fontSize: '14px' }}>{dbError}</div>}
+      </header>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="premium-card">
-              <h3>Configuração Geral</h3>
-              <label>Nome do App</label>
-              <input className="input-field" value={config.appName} onChange={e => setConfig({...config, appName: e.target.value})} />
-              <label>Link Afiliado</label>
-              <input className="input-field" value={config.affiliateLink} onChange={e => setConfig({...config, affiliateLink: e.target.value})} />
+          <div className="premium-card" style={{ background: '#1c252e', padding: '24px', borderRadius: '20px' }}>
+              <h3 style={{ marginBottom: '20px' }}>Geral</h3>
+              <label style={{ display: 'block', marginBottom: '8px' }}>Nome do App</label>
+              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px' }} value={config.appName} onChange={e => setConfig({...config, appName: e.target.value})} />
+              <label style={{ display: 'block', marginBottom: '8px' }}>Link de Afiliado</label>
+              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} value={config.affiliateLink} onChange={e => setConfig({...config, affiliateLink: e.target.value})} />
           </div>
 
-          <div className="premium-card">
-              <h3>Broadcast Instantâneo</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                  <div style={{ background: 'rgba(0,255,136,0.1)', padding: '5px 15px', borderRadius: '20px', color: 'var(--primary)' }}>
-                      <strong>{subCount}</strong> Assinantes Reais
-                  </div>
+          <div className="premium-card" style={{ background: '#1c252e', padding: '24px', borderRadius: '20px', border: dbError ? '1px solid #ff4444' : '1px solid #333' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <h3>Push Broadcast</h3>
+                  <span style={{ color: '#00ff88', fontWeight: 'bold' }}>{subCount} Ativos</span>
               </div>
-              <input className="input-field" placeholder="Título" value={pushForm.title} onChange={e => setPushForm({...pushForm, title: e.target.value})} />
-              <textarea className="input-field" placeholder="Mensagem do Push" value={pushForm.body} onChange={e => setPushForm({...pushForm, body: e.target.value})} style={{ minHeight: '80px' }} />
+              <input style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px' }} placeholder="Título" value={pushForm.title} onChange={e => setPushForm({...pushForm, title: e.target.value})} />
+              <textarea style={{ width: '100%', padding: '10px', background: '#0a0e12', border: '1px solid #333', color: '#fff', borderRadius: '8px', minHeight: '80px' }} placeholder="Sua mensagem..." value={pushForm.body} onChange={e => setPushForm({...pushForm, body: e.target.value})} />
               
-              <div style={{ marginTop: '10px', minHeight: '20px', fontSize: '13px' }}>{pushStatus}</div>
+              <div style={{ margin: '10px 0', fontSize: '13px', color: '#00ff88' }}>{pushStatus}</div>
               
               <button 
                 onClick={handleBroadcast} 
-                className="btn-primary" 
-                style={{ width: '100%', marginTop: '10px' }} 
-                disabled={loading || subCount === 0}
+                style={{ width: '100%', padding: '12px', borderRadius: '10px', background: (loading || subCount === 0) ? '#333' : '#00ff88', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+                disabled={loading || subCount === 0 || dbError}
               >
-                {loading ? 'Enviando...' : (subCount === 0 ? 'Aguardando Assinantes' : '🚀 Disparar para Todos')}
+                {loading ? 'Disparando...' : (subCount === 0 ? 'Sem Assinantes' : '🚀 Enviar Agora')}
               </button>
           </div>
       </div>
 
-      <div style={{ marginTop: '20px', textAlign: 'right' }}>
-          <span>{status}</span>
-          <button onClick={handleSave} className="btn-primary" style={{ marginLeft: '10px' }}>Salvar Tudo</button>
+      <div style={{ marginTop: '30px', textAlign: 'right' }}>
+          <span style={{ marginRight: '15px', color: '#00ff88' }}>{status}</span>
+          <button onClick={handleSave} style={{ padding: '10px 30px', borderRadius: '10px', background: '#00ff88', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Salvar Configuração</button>
       </div>
     </div>
   );

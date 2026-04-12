@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import webpush from 'web-push';
 
-// Configurar VAPID (Usando as chaves geradas anteriormente)
+// Configurar VAPID
 webpush.setVapidDetails(
   'mailto:contato@ganhoubet.xyz',
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BCQ7_QJfE6cBwcIpyABHGu0yqw6OCTQlQcEefDVAMcAnPvzCblWTebMoK37s7yuYnlyK7jE65qndMn21TVBCQJk',
@@ -11,41 +11,43 @@ webpush.setVapidDetails(
 
 export async function GET() {
   try {
+    // DIAGNÓSTICO: Verificar se KV está configurado
+    if (!process.env.KV_REST_API_URL) {
+        return NextResponse.json({ error: 'DB_NOT_CONFIGURED', details: 'Falta conectar o KV no Storage da Vercel' }, { status: 500 });
+    }
+
     const subscriptions = await kv.get('push_subscriptions') || [];
     return NextResponse.json({ count: subscriptions.length });
   } catch (err) {
-    return NextResponse.json({ count: 0 });
+    console.error('KV GET Error:', err);
+    return NextResponse.json({ count: 0, error: err.message });
   }
 }
 
 export async function POST(req) {
   try {
+    if (!process.env.KV_REST_API_URL) {
+        return NextResponse.json({ error: 'DB_NOT_CONFIGURED' }, { status: 500 });
+    }
+
     const { title, body, url } = await req.json();
     const subscriptions = await kv.get('push_subscriptions') || [];
 
     if (subscriptions.length === 0) {
-      return NextResponse.json({ success: true, message: 'Nenhum assinante encontrado.' });
+      return NextResponse.json({ success: true, message: 'Nenhum assinante encontrado.', sentCount: 0 });
     }
 
     const payload = JSON.stringify({
       title: title || 'GanhouBet',
-      body: body || '🎰 O Touro está solto! Recupere sua sorte agora.',
+      body: body || '🎰 Bônus disponível!',
       url: url || 'https://play.ganhoubet.xyz/'
     });
 
-    console.log(`🚀 Inciando Broadcast para ${subscriptions.length} inscritos...`);
-
     const results = await Promise.allSettled(
-        subscriptions.map((sub, index) => 
-            webpush.sendNotification(sub, payload)
-              .catch(err => {
-                console.error(`❌ Falha no envio para inscrito ${index}:`, err.statusCode);
-                throw err;
-              })
-        )
+        subscriptions.map(sub => webpush.sendNotification(sub, payload))
     );
 
-    // Limpeza de assinaturas inválidas (expiradas ou removidas pelo browser)
+    // Limpar inválidos
     const invalidEndpoints = results
         .filter(r => r.status === 'rejected' && (r.reason.statusCode === 410 || r.reason.statusCode === 404))
         .map((_, i) => subscriptions[i].endpoint);
@@ -62,7 +64,6 @@ export async function POST(req) {
     });
 
   } catch (err) {
-    console.error('Send Push Error:', err);
-    return NextResponse.json({ error: 'Erro ao enviar notificações' }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
