@@ -1,6 +1,5 @@
 'use client';
 
-// Helper functions for VAPID key conversion
 function urlBase64ToUint8Array(base64String) {
   try {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -14,26 +13,35 @@ function urlBase64ToUint8Array(base64String) {
     }
     return outputArray;
   } catch (e) {
-    console.error('Base64 conversion error:', e);
     return null;
   }
 }
 
+// Helper for timeout
+const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+
 export const subscribeUser = async () => {
   if (typeof window === 'undefined') return;
+  
+  console.log('--- Push Registration Start ---');
+  
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('Push not supported in this browser');
+    console.error('Push Not Supported');
     return;
   }
   
   try {
-    const registration = await navigator.serviceWorker.ready;
-    
-    // Check for existing subscription to avoid duplicates
+    // 1. Race against timeout (10s) to avoid hanging
+    const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        timeout(10000)
+    ]);
+
+    console.log('Service Worker Ready');
+
     const existingSubscription = await registration.pushManager.getSubscription();
     if (existingSubscription) {
-        console.log('User already subscribed, refreshing on server...');
-        // We sync again just in case the server lost the record
+        console.log('Refreshing sync with server...');
         await fetch('/api/push/subscription', {
             method: 'POST',
             body: JSON.stringify(existingSubscription),
@@ -44,14 +52,14 @@ export const subscribeUser = async () => {
 
     const publicKey = 'BCQ7_QJfE6cBwcIpyABHGu0yqw6OCTQlQcEefDVAMcAnPvzCblWTebMoK37s7yuYnlyK7jE65qndMn21TVBCQJk';
     const convertedKey = urlBase64ToUint8Array(publicKey);
-    if (!convertedKey) return;
+    if (!convertedKey) throw new Error('Invalid VAPID Key conversion');
 
-    console.log('Creating new push subscription...');
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: convertedKey
     });
 
+    console.log('Sending subscription to server...');
     const res = await fetch('/api/push/subscription', {
       method: 'POST',
       body: JSON.stringify(subscription),
@@ -59,9 +67,16 @@ export const subscribeUser = async () => {
     });
 
     if (res.ok) {
-        console.log('✅ Subscribe Successful & Synced with Server');
+        console.log('✅ Subscribe Successful');
+    } else {
+        const errorData = await res.json();
+        console.error('Server error during subscription:', errorData);
+        alert('Erro ao salvar no banco. Verifique se o Vercel KV está configurado.');
     }
   } catch (err) {
-    console.error('❌ Push registration failed:', err);
+    console.error('❌ Push registration error:', err.message);
+    if (err.message === 'Timeout') {
+        console.warn('Is the Service Worker registered with the correct scope?');
+    }
   }
 };
