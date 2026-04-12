@@ -1,38 +1,45 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 
-const CONFIG_PATH = path.join(process.cwd(), 'config.json');
+let redisClient = null;
 
-// Helper to determine if we should use KV or File
-const isCloud = !!process.env.KV_REST_API_URL;
+async function getRedisClient() {
+  if (redisClient) return redisClient;
+  const client = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  client.on('error', (err) => console.error('Redis Client Error', err));
+  await client.connect();
+  redisClient = client;
+  return redisClient;
+}
 
 async function getConfig() {
   try {
-    if (isCloud) {
-      const data = await kv.get('pwa_config');
-      if (data) return data;
+    if (process.env.REDIS_URL) {
+      const redis = await getRedisClient();
+      const data = await redis.get('pwa_config_v2');
+      if (data) return JSON.parse(data);
     }
   } catch (e) {
-    console.error('KV Error:', e);
+    console.error('Redis Config Error:', e);
   }
 
-  // Fallback to local file (default/dev)
-  try {
-    const file = await fs.readFile(CONFIG_PATH, 'utf8');
-    return JSON.parse(file);
-  } catch (e) {
-    // Default config if no file exists
-    return {
-      affiliateLink: 'https://ganhou.bet/?register=true&campaign=300girospwatest',
-      gtmId: 'GTM-PNLMZZ8V',
-      appName: 'GanhouBet App',
-      pushMessages: [],
-      twrParams: '',
-      twrSlug: ''
-    };
-  }
+  // Configuração Padrão
+  return {
+    affiliateLink: 'https://ganhou.bet/',
+    gtmId: '',
+    appName: 'GanhouBet App',
+    pushMessages: [],
+    funnel: [
+      { id: 1, title: '🎁 Seu Bônus de Boas-vindas!', body: 'O Touro liberou 300 giros agora. Entre no app!', delay: 2 },
+      { id: 2, title: '🎰 Alerta de Jackpot', body: 'Alguém acabou de ganhar R$ 5.400 no Mascot. Sua vez?', delay: 12 },
+      { id: 3, title: '📢 Saldo Expirando', body: 'Não deixe sua sorte esfriar. Entre e jogue agora!', delay: 24 }
+    ],
+    twrParams: '',
+    twrSlug: '',
+    pixelId: ''
+  };
 }
 
 export async function GET() {
@@ -42,16 +49,16 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const newConfig = await req.json();
-
-    if (isCloud) {
-       await kv.set('pwa_config', newConfig);
-    } else {
-       await fs.writeFile(CONFIG_PATH, JSON.stringify(newConfig, null, 2));
+    if (!process.env.REDIS_URL) {
+        return NextResponse.json({ error: 'REDIS_NOT_CONFIGURED' }, { status: 500 });
     }
+
+    const newConfig = await req.json();
+    const redis = await getRedisClient();
+    await redis.set('pwa_config_v2', JSON.stringify(newConfig));
 
     return NextResponse.json({ success: true, config: newConfig });
   } catch (err) {
-    return NextResponse.json({ error: 'Erro ao salvar configuração' }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao salvar configuração no Redis' }, { status: 500 });
   }
 }

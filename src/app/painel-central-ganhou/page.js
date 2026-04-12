@@ -10,6 +10,7 @@ export default function AdminDashboard() {
     gtmId: '',
     appName: 'GanhouBet',
     pushMessages: [],
+    funnel: [],
     twrParams: '',
     twrSlug: '',
     pixelId: ''
@@ -106,6 +107,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const addFunnelStep = () => {
+    const newStep = { id: Date.now(), title: '', body: '', delay: 2 };
+    setConfig({ ...config, funnel: [...config.funnel, newStep] });
+  };
+
+  const removeFunnelStep = (id) => {
+    setConfig({ ...config, funnel: config.funnel.filter(s => s.id !== id) });
+  };
+
+  const updateFunnelStep = (id, field, value) => {
+    setConfig({
+      ...config,
+      funnel: config.funnel.map(s => s.id === id ? { ...s, [field]: value } : s)
+    });
+  };
+
   if (!isLogged) {
       return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#09090b', fontFamily: 'Inter, sans-serif' }}>
@@ -143,16 +160,16 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
             <div>
-                <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0 }}>Central de Comando <span style={{ color: '#00ff88' }}>GanhouBet</span></h1>
-                <p style={{ color: '#71717a', marginTop: '5px' }}>Gerencie tráfego, cloaking e notificações inteligentes.</p>
+                <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0 }}>Central de Comando <span style={{ color: '#00ff88' }}>GanhouBet Pro</span></h1>
+                <p style={{ color: '#71717a', marginTop: '5px' }}>Otimização de tráfego e funis de retenção automática.</p>
             </div>
             <div style={{ textAlign: 'right' }}>
                 <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '20px' }}>{subCount}</div>
-                <div style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase' }}>Assinantes Ativos</div>
+                <div style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase' }}>Assinantes no Banco</div>
             </div>
         </header>
 
@@ -162,64 +179,101 @@ export default function AdminDashboard() {
             </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
             
-            {/* Coluna 1: Marketing & Tracking */}
-            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>📈 Marketing & Tracking</h3>
-                <InputGroup label="Link de Afiliado (CPA)" value={config.affiliateLink} onChange={v => setConfig({...config, affiliateLink: v})} placeholder="https://ganhou.bet/..." />
-                <InputGroup label="Google Tag Manager (GTM)" value={config.gtmId} onChange={v => setConfig({...config, gtmId: v})} placeholder="GTM-XXXXXXX" />
-                <InputGroup label="Facebook Pixel ID" value={config.pixelId} onChange={v => setConfig({...config, pixelId: v})} placeholder="Somente os números" />
-                <InputGroup label="Identificador do App" value={config.appName} onChange={v => setConfig({...config, appName: v})} placeholder="Ex: GanhouBet App" />
+            {/* Coluna 1: Marketing & TWR */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px' }}>📈 Tracking & CPA</h3>
+                    <InputGroup label="Link de Afiliado" value={config.affiliateLink} onChange={v => setConfig({...config, affiliateLink: v})} placeholder="Sua URL de cadastro" />
+                    <InputGroup label="Facebook Pixel" value={config.pixelId} onChange={v => setConfig({...config, pixelId: v})} placeholder="ID do Pixel" />
+                    <InputGroup label="GTM Container" value={config.gtmId} onChange={v => setConfig({...config, gtmId: v})} placeholder="GTM-XXXX" />
+                </div>
+                <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px' }}>🐇 Cloaking (The White Rabbit)</h3>
+                    <InputGroup label="Slug Principal" value={config.twrSlug} onChange={v => setConfig({...config, twrSlug: v})} placeholder="Ex: pwa-home" />
+                    <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>UTM PARAMS</label>
+                    <textarea 
+                        value={config.twrParams}
+                        onChange={e => setConfig({...config, twrParams: e.target.value})}
+                        style={{ width: '100%', padding: '12px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', minHeight: '80px' }}
+                    />
+                </div>
             </div>
 
-            {/* Coluna 2: Cloaking (The White Rabbit) */}
-            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>🐇 Cloaking (TWR)</h3>
-                <InputGroup label="Slug do TWR" value={config.twrSlug} onChange={v => setConfig({...config, twrSlug: v})} placeholder="Ex: ganhou-home" />
-                <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>PARÂMETROS UTM (OPCIONAL)</label>
-                <textarea 
-                    value={config.twrParams}
-                    onChange={e => setConfig({...config, twrParams: e.target.value})}
-                    placeholder="utm_source=google&utm_campaign=..."
-                    style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', minHeight: '120px' }}
-                />
+            {/* Coluna 2: Funil Automático (REQUISITADO) */}
+            <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700' }}>🚀 Funil de Notificações</h3>
+                    <button onClick={addFunnelStep} style={{ background: 'rgba(0, 255, 136, 0.1)', color: '#00ff88', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>+ Add Etapa</button>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '500px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {config.funnel.map((step, index) => (
+                        <div key={step.id} style={{ background: '#09090b', padding: '15px', borderRadius: '16px', border: '1px solid #27272a' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <span style={{ color: '#00ff88', fontSize: '12px', fontWeight: 'bold' }}>#{index + 1} - Gatilho: {step.delay}h</span>
+                                <button onClick={() => removeFunnelStep(step.id)} style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Remover</button>
+                            </div>
+                            <input 
+                                className="input-f" 
+                                style={{ width: '100%', padding: '8px', background: 'transparent', border: 'none', borderBottom: '1px solid #27272a', color: '#fff', marginBottom: '8px', outline: 'none' }} 
+                                placeholder="Título" 
+                                value={step.title} 
+                                onChange={e => updateFunnelStep(step.id, 'title', e.target.value)}
+                            />
+                            <textarea 
+                                style={{ width: '100%', padding: '8px', background: 'transparent', border: 'none', color: '#71717a', fontSize: '13px', outline: 'none', minHeight: '60px' }} 
+                                placeholder="Corpo da mensagem" 
+                                value={step.body} 
+                                onChange={e => updateFunnelStep(step.id, 'body', e.target.value)}
+                            />
+                            <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '12px', color: '#71717a' }}>Enviar após (horas):</span>
+                                <input 
+                                    type="number" 
+                                    style={{ width: '60px', padding: '4px', background: '#1c1c1e', border: '1px solid #333', color: '#00ff88', borderRadius: '5px', textAlign: 'center' }} 
+                                    value={step.delay} 
+                                    onChange={e => updateFunnelStep(step.id, 'delay', parseInt(e.target.value))}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    {config.funnel.length === 0 && <p style={{ color: '#71717a', fontSize: '14px', textAlign: 'center' }}>Nenhum fluxo configurado.</p>}
+                </div>
             </div>
 
-            {/* Coluna 3: Push Real-Time */}
-            <div style={{ background: '#18181b', padding: '30px', borderRadius: '24px', border: '1px solid #27272a', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#00ff88' }}></div>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>🔔 Push Broadcast</h3>
-                <InputGroup label="Título da Mensagem" value={pushForm.title} onChange={v => setPushForm({...pushForm, title: v})} placeholder="Ex: 🎰 Bônus Exclusivo!" />
-                <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>MENSAGEM</label>
+            {/* Coluna 3: Disparo Manual */}
+            <div style={{ background: '#18181b', padding: '25px', borderRadius: '24px', border: '1px solid #27272a' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px' }}>🔔 Broadcast Instantâneo</h3>
+                <InputGroup label="Título do Push" value={pushForm.title} onChange={v => setPushForm({...pushForm, title: v})} placeholder="Ex: 🎁 Bônus Exclusivo!" />
+                <label style={{ display: 'block', color: '#a1a1aa', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>MENSAGEM REAL-TIME</label>
                 <textarea 
                     value={pushForm.body}
                     onChange={e => setPushForm({...pushForm, body: e.target.value})}
                     placeholder="Sua oferta matadora aqui..."
                     style={{ width: '100%', padding: '12px 16px', background: '#09090b', border: '1px solid #27272a', borderRadius: '12px', color: '#fff', fontSize: '14px', outline: 'none', minHeight: '100px', marginBottom: '15px' }}
                 />
-                
                 <div style={{ fontSize: '13px', color: '#00ff88', minHeight: '20px', marginBottom: '10px' }}>{pushStatus}</div>
-
                 <button 
                     onClick={handleBroadcast}
                     disabled={loading || subCount === 0 || dbError}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', background: (subCount > 0 && !dbError) ? '#00ff88' : '#27272a', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', background: (subCount > 0 && !dbError) ? '#00ff88' : '#27272a', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                 >
-                    {loading ? 'Processando...' : (subCount === 0 ? 'Aguardando Assinantes' : '🚀 Disparar para Todos Agora')}
+                    {loading ? 'Disparando...' : '🚀 Enviar Manual Agora'}
                 </button>
+                <p style={{ marginTop: '15px', fontSize: '11px', color: '#71717a', textAlign: 'center' }}>Isso dispara para TODOS os assinantes ativos instantaneamente.</p>
             </div>
 
         </div>
 
         <footer style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}>
-            <span style={{ color: '#00ff88', fontSize: '14px', fontWeight: 'bold' }}>{status}</span>
+            <span style={{ color: '#00ff88', fontSize: '14px' }}>{status}</span>
             <button 
                 onClick={handleSave} 
-                className="btn-primary" 
                 style={{ padding: '15px 40px', borderRadius: '14px', background: '#fff', color: '#000', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 20px -5px rgba(255,255,255,0.2)' }}
             >
-                Salvar Configurações
+                Salvar Toda Configuração
             </button>
         </footer>
 
