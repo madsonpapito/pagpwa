@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from 'redis';
+import { sendCapiEvent } from '../../../utils/facebook-capi';
 
 let redisClient = null;
 
@@ -20,7 +21,7 @@ export async function POST(req) {
         return NextResponse.json({ error: 'REDIS_NOT_CONFIGURED' }, { status: 500 });
     }
 
-    const subscription = await req.json();
+    const { eventId, ...subscription } = await req.json();
     const redis = await getRedisClient();
     
     const data = await redis.get('push_subscriptions');
@@ -29,16 +30,25 @@ export async function POST(req) {
     const exists = subscriptions.find(s => s.endpoint === subscription.endpoint);
     
     if (!exists) {
-      // Adicionar metadados para automação
+      // 1. Adicionar metadados para automação e rastreamento TWR
       const newSubscriber = {
         ...subscription,
         createdAt: Date.now(),
-        sentAutomations: [] // Lista de IDs de mensagens do funil já enviadas
+        sentAutomations: [] 
       };
       
       subscriptions.push(newSubscriber);
       await redis.set('push_subscriptions', JSON.stringify(subscriptions));
       console.log('✅ Novo lead registrado no Funil Automático!');
+
+      // 2. DISPARAR FACEBOOK CAPI (LEAD)
+      if (eventId) {
+        await sendCapiEvent({
+            eventName: 'Lead',
+            eventId: eventId,
+            req: req
+        });
+      }
     } else {
         // Se já existe, garantir que tenha o campo createdAt
         const index = subscriptions.findIndex(s => s.endpoint === subscription.endpoint);

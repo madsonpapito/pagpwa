@@ -20,7 +20,7 @@ function urlBase64ToUint8Array(base64String) {
 // Helper for timeout
 const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
-export const subscribeUser = async () => {
+export const subscribeUser = async (metadata = {}) => {
   if (typeof window === 'undefined') return;
   
   console.log('--- Push Registration Start ---');
@@ -44,7 +44,7 @@ export const subscribeUser = async () => {
         console.log('Refreshing sync with server...');
         await fetch('/api/push/subscription', {
             method: 'POST',
-            body: JSON.stringify(existingSubscription),
+            body: JSON.stringify({ ...existingSubscription, ...metadata }),
             headers: { 'Content-Type': 'application/json' }
         });
         return;
@@ -62,7 +62,7 @@ export const subscribeUser = async () => {
     console.log('Sending subscription to server...');
     const res = await fetch('/api/push/subscription', {
       method: 'POST',
-      body: JSON.stringify(subscription),
+      body: JSON.stringify({ ...subscription, ...metadata }),
       headers: { 'Content-Type': 'application/json' }
     });
 

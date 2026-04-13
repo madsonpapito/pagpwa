@@ -3,10 +3,13 @@
   "gtmId": "GTM-PNLMZZ8V",
   "appName": "GanhouBet App",
   "pushMessages": [
-    { "id": 1, "time": "2h", "text": "🎁 300 Giros Grátis esperando por você!" },
-    { "id": 2, "time": "12h", "text": "⚠️ Seu bônus de boas-vindas expira em breve." },
-    { "id": 3, "time": "24h", "text": "🎰 O Touro está solto! Recupere sua sorte agora." }
+    { "id": 1, "time": "5m", "text": "🎁 300 Giros Grátis esperando por você!" },
+    { "id": 2, "time": "30m", "text": "⚠️ Seu bônus de boas-vindas expira em breve." },
+    { "id": 3, "time": "60m", "text": "🎰 O Touro está solto! Recupere sua sorte agora." }
   ],
   "twrParams": "",
-  "twrSlug": ""
+  "twrSlug": "",
+  "fbPixelId": "1514318250732031",
+  "fbAccessToken": "EAAXafogI9v8BRE6XCmRZBgOKquMVnNTZCQFzW7fd9GbZBhtUFo1LGhaku4Kay73URgFW6AHLqL7IYS7y54enpBdgr3z37zgZASxtanc0djUqAvHvy7lVe4ML7MtWW6txEdNnex7xVAcpSBwekrKxKJA0w0IvCZAtlV5Pi3g0EkEhgqLs6ZBWgtuec3voK2ppbjwwZDZD",
+  "fbTestEventCode": ""
 }

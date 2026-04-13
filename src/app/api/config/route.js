@@ -32,9 +32,9 @@ async function getConfig() {
     appName: 'GanhouBet App',
     pushMessages: [],
     funnel: [
-      { id: 1, title: '🎁 Seu Bônus de Boas-vindas!', body: 'O Touro liberou 300 giros agora. Entre no app!', delay: 2 },
-      { id: 2, title: '🎰 Alerta de Jackpot', body: 'Alguém acabou de ganhar R$ 5.400 no Mascot. Sua vez?', delay: 12 },
-      { id: 3, title: '📢 Saldo Expirando', body: 'Não deixe sua sorte esfriar. Entre e jogue agora!', delay: 24 }
+      { id: 1, title: '🎁 Seu Bônus de Boas-vindas!', body: 'O Touro liberou 300 giros agora. Entre no app!', delay: 5 },
+      { id: 2, title: '🎰 Alerta de Jackpot', body: 'Alguém acabou de ganhar R$ 5.400 no Mascot. Sua vez?', delay: 30 },
+      { id: 3, title: '📢 Saldo Expirando', body: 'Não deixe sua sorte esfriar. Entre e jogue agora!', delay: 60 }
     ],
     twrParams: '',
     twrSlug: '',

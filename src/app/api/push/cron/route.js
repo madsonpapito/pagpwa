@@ -53,12 +53,12 @@ export async function GET(req) {
     for (let sub of subscriptions) {
       if (!sub.createdAt) continue;
 
-      const timePassedHours = (Date.now() - sub.createdAt) / (1000 * 60 * 60);
+      const timePassedMinutes = (Date.now() - sub.createdAt) / (1000 * 60);
       sub.sentAutomations = sub.sentAutomations || [];
 
       for (let step of funnel) {
-        // Se já passou o tempo E ainda não enviou essa etapa específica
-        if (timePassedHours >= step.delay && !sub.sentAutomations.includes(step.id)) {
+        // Se já passou o tempo (em minutos) E ainda não enviou essa etapa específica
+        if (timePassedMinutes >= step.delay && !sub.sentAutomations.includes(step.id)) {
           try {
             const payload = JSON.stringify({
               title: step.title || config.appName,

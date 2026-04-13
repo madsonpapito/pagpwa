@@ -8,14 +8,30 @@ export default function IosStorePage() {
   const [progress, setProgress] = useState(0);
   const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
   const [showIosTutorial, setShowIosTutorial] = useState(false);
+  const [queryParams, setQueryParams] = useState({});
 
   useEffect(() => {
+    // 0. Capturar parâmetros da URL (TWR)
+    if (typeof window !== 'undefined') {
+        const params = Object.fromEntries(new URLSearchParams(window.location.search));
+        setQueryParams(params);
+    }
+    // 1. Carregar Config
     fetch('/api/config')
       .then(res => res.json())
       .then(data => {
         if (data.affiliateLink) setAffiliateLink(data.affiliateLink);
       })
       .catch(err => console.error('Failed to load config:', err));
+
+    // 2. Evento: ViewContent
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      window.dataLayer.push({
+        event: 'ViewContent',
+        platform: 'ios',
+        content_name: 'Store iOS'
+      });
+    }
   }, []);
 
   const handleInstall = (e) => {
@@ -26,7 +42,7 @@ export default function IosStorePage() {
       setIsInstalling(true);
       if (typeof window !== 'undefined' && window.dataLayer) {
         window.dataLayer.push({ 
-          event: 'pwa_install_click',
+          event: 'InitiateCheckout',
           platform: 'ios'
         });
       }
@@ -49,25 +65,51 @@ export default function IosStorePage() {
   };
 
   const finishInstallation = async () => {
-    // 1. Request Push Permission
+    // 1. Generate Event ID for Deduplication
+    const eventId = 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+    // 2. Request Push Permission
     if ('Notification' in window) {
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            await subscribeUser(); // ACTION: Try to sync immediately
+            if (window.dataLayer) {
+              window.dataLayer.push({ 
+                event: 'Lead', 
+                platform: 'ios',
+                event_id: eventId // FB CAPI Deduplication
+              });
+            console.log('Permission granted! Subscribing device...');
+            await subscribeUser({ 
+                eventId,
+                metadata: queryParams // Salva dados do TWR no Redis
+            }); 
+        } else {
+            if (window.dataLayer) {
+              window.dataLayer.push({ event: 'PushDenied', platform: 'ios' });
+            }
         }
       } catch (e) {
         console.warn('Notification permission failed');
       }
     }
 
-    // 2. Show iOS specific instructions
+    // 3. Evento: AddPaymentInfo
+    if (window.dataLayer) {
+      window.dataLayer.push({ 
+        event: 'AddPaymentInfo',
+        platform: 'ios',
+        event_id: 'payment_' + eventId
+      });
+    }
+
+    // 4. Show iOS specific instructions
     setShowIosTutorial(true);
 
-    // 3. Final Redirect
+    // 4. Final Redirect (500ms delay to ensure GTM fires)
     setTimeout(() => {
       window.location.href = affiliateLink;
-    }, 4000);
+    }, 500);
   };
 
   return (

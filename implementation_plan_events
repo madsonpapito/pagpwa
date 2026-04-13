@@ -1,0 +1,57 @@
+# Configuração de Eventos GTM e Gatilhos de Notificação (Casa)
+
+Este plano detalha como vamos configurar o rastreamento profissional via Google Tag Manager e como permitiremos que eventos ocorridos dentro da Ganhou.bet (como depósitos) disparem notificações Push instantâneas.
+
+## User Review Required
+
+> [!IMPORTANT]
+> Para o funcionamento dos gatilhos da "casa", precisaremos que você configure a **URL de Postback** no painel de afiliados da Ganhou.bet apontando para o nosso novo endpoint.
+
+## Proposed Changes
+
+### 1. Rastreamento GTM (Funil Completo)
+
+Vamos implementar eventos disparados para o `dataLayer` nos momentos cruciais do PWA:
+- `pwa_install_start`: Quando o usuário clica em "Instalar/Obter".
+- `pwa_permission_allowed`: Consentimento de notificações concedido.
+- `pwa_permission_denied`: Consentimento negado.
+- `pwa_conversion_redirect`: Momento exato do redirecionamento para a casa.
+
+#### [MODIFY] [android/page.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/store/android/page.js) e [ios/page.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/store/ios/page.js)
+- Adição dos novos eventos GTM.
+
+---
+
+### 2. Sistema de Webhooks (Gatilhos da Casa)
+
+Para que a casa "fale" com o nosso sistema, precisamos de um vínculo (Identity Link).
+
+#### [MODIFY] [push.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/utils/push.js)
+- Alterar `subscribeUser` para capturar parâmetros da URL (como `click_id` ou `utm_source`) e enviá-los junto com a subscrição.
+
+#### [MODIFY] [api/push/subscription/route.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/api/push/subscription/route.js)
+- Salvar o identificador externo no Redis associado à subscrição do usuário.
+
+#### [NEW] [api/webhook/ganhou/route.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/api/webhook/ganhou/route.js)
+- Criar o recebedor de sinais da casa. Quando a casa enviar um sinal de "Depósito", este arquivo buscará o usuário no Redis e enviará um Push de comemoração ou de "Bônus Liberado".
+
+---
+
+### 3. Dashboard Administrativo
+
+#### [MODIFY] [painel-central-ganhou/page.js](file:///c:/Users/madso/OneDrive/%C3%81rea%20de%20Trabalho/ganhou-bet/src/app/painel-central-ganhou/page.js)
+- Exibir a URL de Webhook para que o usuário possa copiar e colar no painel da Ganhou.bet.
+
+## Open Questions
+
+- Na Ganhou.bet, qual é o nome do parâmetro que eles aceitam para devolver no postback? (Geralmente é `subid`, `clickid` ou `extid`).
+- Quais eventos da casa você gostaria de usar como gatilho? (Ex: Apenas Depósito? Cadastro também?)
+
+## Verification Plan
+
+### Automated Tests
+- Simular uma subscrição com um `click_id` fictício.
+- Fazer uma requisição `POST` manual para `/api/webhook/ganhou` simulando a casa e verificar se o Push é disparado.
+
+### Manual Verification
+- Clicar no fluxo do PWA e verificar os eventos aparecendo no Debug Mode do GTM.
