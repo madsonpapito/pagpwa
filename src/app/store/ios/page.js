@@ -79,6 +79,7 @@ export default function IosStorePage() {
                 platform: 'ios',
                 event_id: eventId // FB CAPI Deduplication
               });
+            }
             console.log('Permission granted! Subscribing device...');
             await subscribeUser({ 
                 eventId,
