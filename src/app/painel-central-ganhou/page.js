@@ -222,7 +222,7 @@ export default function AdminDashboard() {
                     {config.funnel.map((step, index) => (
                         <div key={step.id} style={{ background: '#09090b', padding: '15px', borderRadius: '16px', border: '1px solid #27272a' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <span style={{ color: '#00ff88', fontSize: '12px', fontWeight: 'bold' }}>#{index + 1} - Gatilho: {step.delay}h</span>
+                                <span style={{ color: '#00ff88', fontSize: '12px', fontWeight: 'bold' }}>#{index + 1} - Gatilho: {step.delay}min</span>
                                 <button onClick={() => removeFunnelStep(step.id)} style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Remover</button>
                             </div>
                             <input 
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
                                 onChange={e => updateFunnelStep(step.id, 'body', e.target.value)}
                             />
                             <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '12px', color: '#71717a' }}>Enviar após (horas):</span>
+                                <span style={{ fontSize: '12px', color: '#71717a' }}>Enviar após (minutos):</span>
                                 <input 
                                     type="number" 
                                     style={{ width: '60px', padding: '4px', background: '#1c1c1e', border: '1px solid #333', color: '#00ff88', borderRadius: '5px', textAlign: 'center' }} 
