@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [pushForm, setPushForm] = useState({ title: '', body: '' });
   const [pushStatus, setPushStatus] = useState('');
   const [subCount, setSubCount] = useState(0);
+  const [totalSent, setTotalSent] = useState(0);
+  const [lastRun, setLastRun] = useState(null);
   const [dbError, setDbError] = useState(null);
 
   const handleLogin = (e) => {
@@ -51,6 +53,8 @@ export default function AdminDashboard() {
             } else {
                 setDbError(null);
                 setSubCount(data.count || 0);
+                setTotalSent(data.totalSent || 0);
+                setLastRun(data.lastRun || null);
             }
         } catch (e) {
             setDbError('❌ Falha na API.');
@@ -128,7 +132,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Lógica inteligente de URL final
   const domain = config.campaignDomain || (typeof window !== 'undefined' ? window.location.hostname : '');
   const finalUrl = `https://${domain}/${config.twrSlug}${config.twrParams ? (config.twrParams.startsWith('?') ? '' : '?') + config.twrParams : ''}`;
 
@@ -167,18 +170,33 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const formatDate = (ts) => {
+    if (!ts) return 'Nunca';
+    return new Date(parseInt(ts)).toLocaleString('pt-BR');
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '40px 20px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', borderBottom: '1px solid #27272a', paddingBottom: '30px' }}>
             <div>
                 <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#fff', margin: 0 }}>Central de Comando <span style={{ color: '#00ff88' }}>GanhouBet Pro</span></h1>
                 <p style={{ color: '#71717a', marginTop: '5px' }}>Otimização de tráfego e funis de retenção automática.</p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '20px' }}>{subCount}</div>
-                <div style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase' }}>Assinantes no Banco</div>
+            <div style={{ display: 'flex', gap: '30px' }}>
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '22px' }}>{subCount}</div>
+                    <div style={{ color: '#71717a', fontSize: '11px', textTransform: 'uppercase' }}>Assinantes</div>
+                </div>
+                <div style={{ textAlign: 'right', borderLeft: '1px solid #27272a', paddingLeft: '30px' }}>
+                    <div style={{ color: '#00ff88', fontWeight: 'bold', fontSize: '22px' }}>{totalSent}</div>
+                    <div style={{ color: '#71717a', fontSize: '11px', textTransform: 'uppercase' }}>Total Enviado</div>
+                </div>
+                <div style={{ textAlign: 'right', borderLeft: '1px solid #27272a', paddingLeft: '30px' }}>
+                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px', marginTop: '5px' }}>{formatDate(lastRun)}</div>
+                    <div style={{ color: '#71717a', fontSize: '11px', textTransform: 'uppercase' }}>Último Cron</div>
+                </div>
             </div>
         </header>
 

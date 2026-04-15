@@ -32,7 +32,15 @@ export async function GET() {
     const data = await redis.get('push_subscriptions');
     const subscriptions = data ? JSON.parse(data) : [];
     
-    return NextResponse.json({ count: subscriptions.length });
+    // [NEW] Buscar estatísticas globais
+    const totalSent = await redis.get('push_stats:total_sent') || 0;
+    const lastRun = await redis.get('push_stats:last_run') || null;
+    
+    return NextResponse.json({ 
+        count: subscriptions.length,
+        totalSent: parseInt(totalSent),
+        lastRun: lastRun ? parseInt(lastRun) : null
+    });
   } catch (err) {
     console.error('Redis GET Error:', err);
     return NextResponse.json({ count: 0, error: err.message });
@@ -64,6 +72,15 @@ export async function POST(req) {
         subscriptions.map(sub => webpush.sendNotification(sub, payload))
     );
 
+    const successfulCount = results.filter(r => r.status === 'fulfilled').length;
+
+    // [NEW] Incrementar estatísticas globais no envio manual
+    if (successfulCount > 0) {
+      const totalKey = 'push_stats:total_sent';
+      const currentTotal = await redis.get(totalKey) || 0;
+      await redis.set(totalKey, parseInt(currentTotal) + successfulCount);
+    }
+
     // Limpar inválidos
     const invalidEndpoints = results
         .filter(r => r.status === 'rejected' && (r.reason.statusCode === 410 || r.reason.statusCode === 404))
@@ -76,7 +93,7 @@ export async function POST(req) {
 
     return NextResponse.json({ 
         success: true, 
-        sentCount: results.filter(r => r.status === 'fulfilled').length,
+        sentCount: successfulCount,
         removedCount: invalidEndpoints.length
     });
 

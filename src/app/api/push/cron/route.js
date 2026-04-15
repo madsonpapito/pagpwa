@@ -83,6 +83,12 @@ export async function GET(req) {
     // 4. Salvar estado atualizado se houver mudanças
     if (updatedAny) {
       await redis.set('push_subscriptions', JSON.stringify(subscriptions));
+      
+      // [NEW] Atualizar Estatísticas Globais
+      const totalKey = 'push_stats:total_sent';
+      const currentTotal = await redis.get(totalKey) || 0;
+      await redis.set(totalKey, parseInt(currentTotal) + sentCount);
+      await redis.set('push_stats:last_run', Date.now().toString());
     }
 
     return NextResponse.json({ 
