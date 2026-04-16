@@ -33,28 +33,44 @@ export default function AndroidStorePage() {
     }
   }, []);
 
-  const handleInstall = (e) => {
+  const handleInstall = async (e) => {
     if (e) e.preventDefault();
     if (isInstalling) return;
 
     try {
       setIsInstalling(true);
+      
+      // 1. Gerar Event ID único para toda a sessão de instalação (Deduplicação)
+      const sessionEventId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+      // 2. Evento: InitiateCheckout (GTM + CAPI)
       if (typeof window !== 'undefined' && window.dataLayer) {
         window.dataLayer.push({ 
           event: 'InitiateCheckout',
-          platform: 'android'
+          platform: 'android',
+          event_id: sessionEventId
         });
       }
 
+      // Disparo CAPI (Servidor) - Redundância Crítica
+      fetch('/api/event', {
+        method: 'POST',
+        body: JSON.stringify({
+          eventName: 'InitiateCheckout',
+          eventId: sessionEventId,
+          customData: { platform: 'android' }
+        })
+      }).catch(err => console.error('CAPI IC Error:', err));
+
       let p = 0;
       const interval = setInterval(() => {
-        p += 10; // Faster for testing
+        p += 10;
         if (p > 100) p = 100;
         setProgress(p);
 
         if (p >= 100) {
           clearInterval(interval);
-          finishInstallation();
+          finishInstallation(sessionEventId); // Passa o ID para os próximos eventos
         }
       }, 80);
     } catch (err) {
@@ -63,9 +79,9 @@ export default function AndroidStorePage() {
     }
   };
 
-  const finishInstallation = async () => {
-    // 1. Generate Event ID for Deduplication
-    const eventId = 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  const finishInstallation = async (sessionEventId) => {
+    // Se não recebeu o ID, cria um novo (fallback)
+    const eventId = sessionEventId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
 
     // 2. Request Push Permission
     if ('Notification' in window) {
@@ -79,6 +95,16 @@ export default function AndroidStorePage() {
                 event_id: eventId // FB CAPI Deduplication
               });
             }
+            // Disparo CAPI (Servidor) - Redundância Crítica
+            fetch('/api/event', {
+              method: 'POST',
+              body: JSON.stringify({
+                eventName: 'Lead',
+                eventId: eventId,
+                customData: { platform: 'android', status: 'granted' }
+              })
+            }).catch(err => console.error('CAPI Lead Error:', err));
+
             console.log('Permission granted! Subscribing device...');
             await subscribeUser({ 
                 eventId,
@@ -94,14 +120,23 @@ export default function AndroidStorePage() {
       }
     }
 
-    // 3. Evento: AddPaymentInfo (Início do redirecionamento para o cadastro)
+    // 3. Evento: AddPaymentInfo (Início do redirecionamento para o cadastro) - GTM + CAPI
     if (window.dataLayer) {
       window.dataLayer.push({ 
         event: 'AddPaymentInfo',
         platform: 'android',
-        event_id: 'payment_' + eventId
+        event_id: 'pay_' + eventId
       });
     }
+
+    fetch('/api/event', {
+      method: 'POST',
+      body: JSON.stringify({
+        eventName: 'AddPaymentInfo',
+        eventId: 'pay_' + eventId,
+        customData: { platform: 'android' }
+      })
+    }).catch(err => console.error('CAPI Payment Error:', err));
 
     // 4. Clear instructions and redirect (500ms delay to ensure GTM fires)
     setTimeout(() => {

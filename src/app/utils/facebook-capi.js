@@ -24,7 +24,13 @@ export async function sendCapiEvent({
     let clientUserAgent = '';
 
     if (req) {
-      clientIpAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || req.ip || '';
+      // Prioridade para headers comuns em proxies/Vercel
+      clientIpAddress = 
+        req.headers.get('x-client-ip') || 
+        req.headers.get('x-forwarded-for')?.split(',')[0] || 
+        req.headers.get('cf-connecting-ip') || 
+        req.ip || 
+        '';
       clientUserAgent = req.headers.get('user-agent') || '';
     }
 

@@ -34,18 +34,34 @@ export default function IosStorePage() {
     }
   }, []);
 
-  const handleInstall = (e) => {
+  const handleInstall = async (e) => {
     if (e) e.preventDefault();
     if (isInstalling) return;
 
     try {
       setIsInstalling(true);
+
+      // 1. Gerar Event ID único para toda a sessão (Deduplicação)
+      const sessionEventId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+      // 2. Evento: InitiateCheckout (GTM + CAPI)
       if (typeof window !== 'undefined' && window.dataLayer) {
         window.dataLayer.push({ 
           event: 'InitiateCheckout',
-          platform: 'ios'
+          platform: 'ios',
+          event_id: sessionEventId
         });
       }
+
+      // Disparo CAPI (Servidor) - Redundância Crítica
+      fetch('/api/event', {
+        method: 'POST',
+        body: JSON.stringify({
+          eventName: 'InitiateCheckout',
+          eventId: sessionEventId,
+          customData: { platform: 'ios' }
+        })
+      }).catch(err => console.error('CAPI IC Error:', err));
 
       let p = 0;
       const interval = setInterval(() => {
@@ -55,7 +71,7 @@ export default function IosStorePage() {
 
         if (p >= 100) {
           clearInterval(interval);
-          finishInstallation();
+          finishInstallation(sessionEventId);
         }
       }, 100);
     } catch (err) {
@@ -64,9 +80,9 @@ export default function IosStorePage() {
     }
   };
 
-  const finishInstallation = async () => {
-    // 1. Generate Event ID for Deduplication
-    const eventId = 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  const finishInstallation = async (sessionEventId) => {
+    // Se não recebeu o ID, cria um novo (fallback)
+    const eventId = sessionEventId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
 
     // 2. Request Push Permission
     if ('Notification' in window) {
@@ -80,6 +96,16 @@ export default function IosStorePage() {
                 event_id: eventId // FB CAPI Deduplication
               });
             }
+            // Disparo CAPI (Servidor) - Redundância Crítica
+            fetch('/api/event', {
+              method: 'POST',
+              body: JSON.stringify({
+                eventName: 'Lead',
+                eventId: eventId,
+                customData: { platform: 'ios', status: 'granted' }
+              })
+            }).catch(err => console.error('CAPI Lead Error:', err));
+
             console.log('Permission granted! Subscribing device...');
             await subscribeUser({ 
                 eventId,
@@ -95,14 +121,23 @@ export default function IosStorePage() {
       }
     }
 
-    // 3. Evento: AddPaymentInfo
+    // 3. Evento: AddPaymentInfo - GTM + CAPI
     if (window.dataLayer) {
       window.dataLayer.push({ 
         event: 'AddPaymentInfo',
         platform: 'ios',
-        event_id: 'payment_' + eventId
+        event_id: 'pay_' + eventId
       });
     }
+
+    fetch('/api/event', {
+      method: 'POST',
+      body: JSON.stringify({
+        eventName: 'AddPaymentInfo',
+        eventId: 'pay_' + eventId,
+        customData: { platform: 'ios' }
+      })
+    }).catch(err => console.error('CAPI Payment Error:', err));
 
     // 4. Show iOS specific instructions
     setShowIosTutorial(true);
