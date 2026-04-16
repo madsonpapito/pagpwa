@@ -95,7 +95,6 @@ export default function IosStorePage() {
                 platform: 'ios',
                 event_id: 'ld_' + eventId // FB CAPI Deduplication
               });
-            }
             // Disparo CAPI (Servidor) - Redundância Crítica
             fetch('/api/event', {
               method: 'POST',
