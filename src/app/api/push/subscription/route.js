@@ -45,8 +45,12 @@ export async function POST(req) {
       if (eventId) {
         await sendCapiEvent({
             eventName: 'Lead',
-            eventId: eventId,
-            req: req
+            eventId: 'ld_' + eventId,
+            req: req,
+            customData: { 
+              platform: subscription.platform || 'unknown',
+              source: 'pwa_push_subscription'
+            }
         });
       }
     } else {

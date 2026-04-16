@@ -1,9 +1,9 @@
 /**
- * GanhouBet Service Worker v2
+ * GanhouBet Service Worker v3
  * Força a atualização do cache e melhora a entrega de Push.
  */
 
-const CACHE_NAME = 'ganhou-bet-v2';
+const CACHE_NAME = 'ganhou-bet-v3';
 const assets = ['/', '/touro.png', '/manifest.json'];
 
 self.addEventListener('install', event => {
@@ -59,6 +59,16 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 self.addEventListener('fetch', event => {
+  // Estratégia Network First para documentos (páginas HTML)
+  // Isso garante que mudanças de design sejam vistas imediatamente
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Estratégia Cache First para imagens e assets (performance)
   event.respondWith(
     caches.match(event.request).then(response => response || fetch(event.request))
   );

@@ -9,7 +9,7 @@ export default function PwaHandler() {
       if ('serviceWorker' in navigator) {
         try {
           // Version bust for service worker
-          const reg = await navigator.serviceWorker.register('/sw.js?v=2');
+          const reg = await navigator.serviceWorker.register('/sw.js?v=3');
           console.log('SW Registered:', reg.scope);
         } catch (e) {
           console.error('SW Error:', e);

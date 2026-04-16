@@ -5,6 +5,7 @@ import { subscribeUser } from '../../utils/push';
 
 export default function IosStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [progress, setProgress] = useState(0);
   const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
   const [showIosTutorial, setShowIosTutorial] = useState(false);
@@ -89,11 +90,10 @@ export default function IosStorePage() {
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            if (window.dataLayer) {
               window.dataLayer.push({ 
                 event: 'Lead', 
                 platform: 'ios',
-                event_id: eventId // FB CAPI Deduplication
+                event_id: 'ld_' + eventId // FB CAPI Deduplication
               });
             }
             // Disparo CAPI (Servidor) - Redundância Crítica
@@ -101,7 +101,7 @@ export default function IosStorePage() {
               method: 'POST',
               body: JSON.stringify({
                 eventName: 'Lead',
-                eventId: eventId,
+                eventId: 'ld_' + eventId,
                 customData: { platform: 'ios', status: 'granted' }
               })
             }).catch(err => console.error('CAPI Lead Error:', err));
@@ -141,11 +141,7 @@ export default function IosStorePage() {
 
     // 4. Show iOS specific instructions
     setShowIosTutorial(true);
-
-    // 4. Final Redirect (500ms delay to ensure GTM fires)
-    setTimeout(() => {
-      window.location.href = affiliateLink;
-    }, 500);
+    setIsFinished(true);
   };
 
   return (
@@ -179,7 +175,7 @@ export default function IosStorePage() {
            </div>
         </div>
         <button 
-          onClick={handleInstall}
+          onClick={(e) => isFinished ? (window.location.href = affiliateLink) : handleInstall(e)}
           style={{
             backgroundColor: '#007aff',
             color: '#ffffff',
@@ -189,10 +185,10 @@ export default function IosStorePage() {
             fontWeight: 'bold',
             border: 'none',
             cursor: 'pointer',
-            opacity: isInstalling ? 0.7 : 1
+            opacity: isInstalling && !isFinished ? 0.7 : 1
           }}
         >
-          {isInstalling ? `${progress}%` : 'OBTER'}
+          {isFinished ? 'ABRIR' : (isInstalling ? `${progress}%` : 'OBTER')}
         </button>
       </div>
 
@@ -205,8 +201,10 @@ export default function IosStorePage() {
             <h1 style={{ fontSize: '22px', fontWeight: 'bold', lineHeight: 1.2, margin: 0, color: '#1c1c1e' }}>GanhouBet: Mascot Slots Casino</h1>
             <p style={{ color: '#8e8e93', fontSize: '15px', fontWeight: '500', margin: '4px 0 0' }}>Win Real Cash & Jackpots</p>
             <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-               <button onClick={handleInstall} style={{ backgroundColor: '#007aff', color: '#ffffff', padding: '6px 24px', borderRadius: '20px', fontSize: '16px', fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: isInstalling ? 0.7 : 1 }}>
-                {isInstalling ? (progress === 100 ? 'CONCLUÍDO' : 'BAIXANDO...') : 'OBTER'}
+               <button 
+                onClick={(e) => isFinished ? (window.location.href = affiliateLink) : handleInstall(e)} 
+                style={{ backgroundColor: '#007aff', color: '#ffffff', padding: '6px 24px', borderRadius: '20px', fontSize: '16px', fontWeight: 'bold', border: 'none', cursor: 'pointer', opacity: isInstalling && !isFinished ? 0.7 : 1 }}>
+                {isFinished ? 'ABRIR' : (isInstalling ? (progress === 100 ? 'CONCLUÍDO' : 'BAIXANDO...') : 'OBTER')}
                </button>
             </div>
           </div>
@@ -229,10 +227,57 @@ export default function IosStorePage() {
         <div style={{ marginBottom: '32px' }}>
            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Pré-visualização</h2>
            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px' }}>
-              <div style={{ minWidth: '240px', height: '480px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f2f2f7' }}>
-                <img src="/images/screen-1.png" alt="Preview 1" style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
-              </div>
+              {[
+                { src: '/images/screen-1.png', alt: 'Big Win' },
+                { src: '/images/screen-2.png', alt: 'Slots' },
+                { src: '/images/android-screen-1.png', alt: 'Login' }
+              ].map((img, idx) => (
+                <div key={idx} style={{ minWidth: '240px', height: '480px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f2f2f7' }}>
+                  <img src={img.src} alt={img.alt} style={{ width: '240px', height: '480px', objectFit: 'cover' }} />
+                </div>
+              ))}
            </div>
+        </div>
+
+        {/* Ratings Section (from Android) */}
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1c1c1e' }}>Notas e avaliações</h2>
+            <span style={{ color: '#007aff', fontSize: '16px' }}>Ver tudo</span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '32px', marginBottom: '24px' }}>
+             <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#1c1c1e' }}>4.9</div>
+                <div style={{ fontSize: '13px', color: '#8e8e93', fontWeight: 'bold' }}>de 5</div>
+             </div>
+             <div style={{ flex: 1 }}>
+                {[5,4,3,2,1].map(n => (
+                  <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                    <div style={{ flex: 1, height: '4px', backgroundColor: '#e5e5ea', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: n === 5 ? '92%' : (n === 4 ? '5%' : '1%'), height: '100%', backgroundColor: '#8e8e93', borderRadius: '2px' }}></div>
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+
+          {[
+            { name: 'Ricardo Silva', comment: 'Finalmente o app oficial! O saque via PIX é instantâneo mesmo, já forrei R$ 300 hoje.', date: 'há 2 dias' },
+            { name: 'Bia Oliveira', comment: 'Mascote ta pagando muito! Interface muito limpa e não trava igual o site.', date: 'há 4 dias' },
+            { name: 'Marcos Panda', comment: 'Melhor casino do Brasil, suporte nota 10 e o app ficou show.', date: 'há 1 semana' }
+          ].map((rev, i) => (
+            <div key={i} style={{ backgroundColor: '#f2f2f7', borderRadius: '15px', padding: '16px', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{rev.name}</span>
+                <span style={{ color: '#8e8e93', fontSize: '14px' }}>{rev.date}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '2px', marginBottom: '8px' }}>
+                 {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#ff9500', fontSize: '12px' }}>★</span>)}
+              </div>
+              <p style={{ fontSize: '15px', color: '#1c1c1e', lineHeight: '1.4', margin: 0 }}>{rev.comment}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

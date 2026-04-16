@@ -5,6 +5,7 @@ import { subscribeUser } from '../../utils/push';
 
 export default function AndroidStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [progress, setProgress] = useState(0);
   const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
   const [queryParams, setQueryParams] = useState({});
@@ -92,7 +93,7 @@ export default function AndroidStorePage() {
               window.dataLayer.push({ 
                 event: 'Lead', 
                 platform: 'android',
-                event_id: eventId // FB CAPI Deduplication
+                event_id: 'ld_' + eventId // FB CAPI Deduplication
               });
             }
             // Disparo CAPI (Servidor) - Redundância Crítica
@@ -100,7 +101,7 @@ export default function AndroidStorePage() {
               method: 'POST',
               body: JSON.stringify({
                 eventName: 'Lead',
-                eventId: eventId,
+                eventId: 'ld_' + eventId,
                 customData: { platform: 'android', status: 'granted' }
               })
             }).catch(err => console.error('CAPI Lead Error:', err));
@@ -138,10 +139,8 @@ export default function AndroidStorePage() {
       })
     }).catch(err => console.error('CAPI Payment Error:', err));
 
-    // 4. Clear instructions and redirect (500ms delay to ensure GTM fires)
-    setTimeout(() => {
-      window.location.href = affiliateLink;
-    }, 500);
+    // 4. Clear instructions and set as finished
+    setIsFinished(true);
   };
 
   return (
@@ -221,8 +220,8 @@ export default function AndroidStorePage() {
 
         {/* Install Button */}
         <button 
-          onClick={handleInstall}
-          disabled={isInstalling && progress === 100}
+          onClick={(e) => isFinished ? (window.location.href = affiliateLink) : handleInstall(e)}
+          disabled={isInstalling && !isFinished && progress === 100}
           style={{
             width: '100%',
             backgroundColor: '#01875f',
@@ -232,12 +231,12 @@ export default function AndroidStorePage() {
             fontSize: '14px',
             fontWeight: '500',
             border: 'none',
-            cursor: isInstalling ? 'default' : 'pointer',
+            cursor: isInstalling && !isFinished ? 'default' : 'pointer',
             marginBottom: '32px',
             transition: 'background-color 0.2s',
           }}
         >
-          {isInstalling ? (progress === 100 ? 'CONCLUÍDO...' : `${progress}% Instalando...`) : 'Instalar'}
+          {isFinished ? 'Abrir' : (isInstalling ? (progress === 100 ? 'CONCLUÍDO...' : `${progress}% Instalando...`) : 'Instalar')}
         </button>
 
         {/* Screenshots Container */}

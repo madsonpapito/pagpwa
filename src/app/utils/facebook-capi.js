@@ -32,6 +32,15 @@ export async function sendCapiEvent({
         req.ip || 
         '';
       clientUserAgent = req.headers.get('user-agent') || '';
+
+      // Extrair cookies de rastreamento do FB (_fbp, _fbc)
+      const cookieHeader = req.headers.get('cookie') || '';
+      const cookies = Object.fromEntries(
+        cookieHeader.split(';').map(c => c.trim().split('=')).filter(c => c.length === 2)
+      );
+      
+      if (cookies._fbp) userData.fbp = cookies._fbp;
+      if (cookies._fbc) userData.fbc = cookies._fbc;
     }
 
     const testCode = process.env.FB_TEST_EVENT_CODE || "";
