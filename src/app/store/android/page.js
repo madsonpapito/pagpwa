@@ -6,6 +6,8 @@ import { subscribeUser } from '../../utils/push';
 export default function AndroidStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [pendingEventId, setPendingEventId] = useState(null);
   const [progress, setProgress] = useState(0);
   const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
   const [queryParams, setQueryParams] = useState({});
@@ -80,48 +82,69 @@ export default function AndroidStorePage() {
     }
   };
 
-  const finishInstallation = async (sessionEventId) => {
-    // Se não recebeu o ID, cria um novo (fallback)
+  const finishInstallation = (sessionEventId) => {
     const eventId = sessionEventId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+    setPendingEventId(eventId);
 
-    // 2. Request Push Permission
-    if ('Notification' in window) {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            if (window.dataLayer) {
-              window.dataLayer.push({ 
-                event: 'Lead', 
-                platform: 'android',
-                event_id: 'ld_' + eventId // FB CAPI Deduplication
-              });
-            }
-            // Disparo CAPI (Servidor) - Redundância Crítica
-            fetch('/api/event', {
-              method: 'POST',
-              body: JSON.stringify({
-                eventName: 'Lead',
-                eventId: 'ld_' + eventId,
-                customData: { platform: 'android', status: 'granted' }
-              })
-            }).catch(err => console.error('CAPI Lead Error:', err));
+    // Soft Ask: mostrar modal customizado antes do prompt nativo
+    if ('Notification' in window && Notification.permission === 'default') {
+      setShowPermissionModal(true);
+    } else {
+      // Permissão já concedida, negada ou não suportada
+      completeInstallation(eventId);
+    }
+  };
 
-            console.log('Permission granted! Subscribing device...');
-            await subscribeUser({ 
-                eventId,
-                metadata: queryParams // Salva dados do TWR no Redis
-            }); 
-        } else {
-            if (window.dataLayer) {
-              window.dataLayer.push({ event: 'PushDenied', platform: 'android' });
-            }
+  const handleAcceptPush = async () => {
+    setShowPermissionModal(false);
+    const eventId = pendingEventId;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        if (window.dataLayer) {
+          window.dataLayer.push({ 
+            event: 'Lead', 
+            platform: 'android',
+            event_id: 'ld_' + eventId
+          });
         }
-      } catch (e) {
-        console.warn('Notification permission failed');
+        fetch('/api/event', {
+          method: 'POST',
+          body: JSON.stringify({
+            eventName: 'Lead',
+            eventId: 'ld_' + eventId,
+            customData: { platform: 'android', status: 'granted' }
+          })
+        }).catch(err => console.error('CAPI Lead Error:', err));
+
+        console.log('Permission granted! Subscribing device...');
+        await subscribeUser({ 
+          eventId,
+          metadata: queryParams
+        });
+      } else {
+        if (window.dataLayer) {
+          window.dataLayer.push({ event: 'PushDenied', platform: 'android' });
+        }
       }
+    } catch (e) {
+      console.warn('Notification permission failed');
     }
 
-    // 3. Evento: AddPaymentInfo (Início do redirecionamento para o cadastro) - GTM + CAPI
+    completeInstallation(eventId);
+  };
+
+  const handleDeclinePush = () => {
+    setShowPermissionModal(false);
+    if (window.dataLayer) {
+      window.dataLayer.push({ event: 'PushSkipped', platform: 'android' });
+    }
+    completeInstallation(pendingEventId);
+  };
+
+  const completeInstallation = (eventId) => {
+    // Evento: AddPaymentInfo (Início do redirecionamento para o cadastro) - GTM + CAPI
     if (window.dataLayer) {
       window.dataLayer.push({ 
         event: 'AddPaymentInfo',
@@ -139,7 +162,6 @@ export default function AndroidStorePage() {
       })
     }).catch(err => console.error('CAPI Payment Error:', err));
 
-    // 4. Clear instructions and set as finished
     setIsFinished(true);
   };
 
@@ -238,6 +260,109 @@ export default function AndroidStorePage() {
         >
           {isFinished ? 'Abrir' : (isInstalling ? (progress === 100 ? 'CONCLUÍDO...' : `${progress}% Instalando...`) : 'Instalar')}
         </button>
+
+        {/* Pre-Permission Modal - Soft Ask (Double Opt-in) */}
+        {showPermissionModal && (
+          <>
+            <style>{`
+              @keyframes gb_fadeIn { from { opacity: 0; } to { opacity: 1; } }
+              @keyframes gb_slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes gb_pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+            `}</style>
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              animation: 'gb_fadeIn 0.3s ease'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
+                padding: '32px 28px',
+                maxWidth: '360px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+                animation: 'gb_slideUp 0.4s ease'
+              }}>
+                <div style={{ fontSize: '56px', marginBottom: '12px', lineHeight: 1 }}>🎰</div>
+                <h2 style={{ 
+                  fontSize: '22px', 
+                  fontWeight: '700', 
+                  color: '#1a1a1a',
+                  marginBottom: '8px',
+                  lineHeight: 1.3
+                }}>Ative seus Bônus Exclusivos!</h2>
+                <p style={{ 
+                  color: '#666', 
+                  fontSize: '14px', 
+                  lineHeight: 1.5,
+                  marginBottom: '20px'
+                }}>
+                  Receba notificações de bônus diários e giros grátis direto no seu celular
+                </p>
+                
+                <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+                  {[
+                    { emoji: '🎁', text: 'Bônus diários na hora certa' },
+                    { emoji: '💰', text: 'Alertas de promoções relâmpago' },
+                    { emoji: '🔥', text: 'Seja o primeiro a saber das novidades' }
+                  ].map((item, i) => (
+                    <div key={i} style={{ 
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '8px 0',
+                      fontSize: '15px', color: '#333'
+                    }}>
+                      <span style={{ fontSize: '20px' }}>{item.emoji}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleAcceptPush}
+                  style={{
+                    width: '100%',
+                    padding: '14px 0',
+                    background: 'linear-gradient(135deg, #01875f 0%, #00c853 100%)',
+                    color: '#fff',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    border: 'none',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    marginBottom: '12px',
+                    boxShadow: '0 4px 16px rgba(1, 135, 95, 0.4)',
+                    animation: 'gb_pulse 2s ease-in-out infinite'
+                  }}
+                >
+                  🎁 Ativar Bônus Exclusivos
+                </button>
+                
+                <button
+                  onClick={handleDeclinePush}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#aaa',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    padding: '8px'
+                  }}
+                >
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Screenshots Container */}
         <div style={{ margin: '0 -24px 32px -24px', padding: '0 24px' }}>

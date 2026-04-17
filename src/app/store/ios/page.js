@@ -6,6 +6,8 @@ import { subscribeUser } from '../../utils/push';
 export default function IosStorePage() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [pendingEventId, setPendingEventId] = useState(null);
   const [progress, setProgress] = useState(0);
   const [affiliateLink, setAffiliateLink] = useState('https://ganhou.bet');
   const [showIosTutorial, setShowIosTutorial] = useState(false);
@@ -81,46 +83,68 @@ export default function IosStorePage() {
     }
   };
 
-  const finishInstallation = async (sessionEventId) => {
-    // Se não recebeu o ID, cria um novo (fallback)
+  const finishInstallation = (sessionEventId) => {
     const eventId = sessionEventId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+    setPendingEventId(eventId);
 
-    // 2. Request Push Permission
-    if ('Notification' in window) {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-              window.dataLayer.push({ 
-                event: 'Lead', 
-                platform: 'ios',
-                event_id: 'ld_' + eventId // FB CAPI Deduplication
-              });
-            // Disparo CAPI (Servidor) - Redundância Crítica
-            fetch('/api/event', {
-              method: 'POST',
-              body: JSON.stringify({
-                eventName: 'Lead',
-                eventId: 'ld_' + eventId,
-                customData: { platform: 'ios', status: 'granted' }
-              })
-            }).catch(err => console.error('CAPI Lead Error:', err));
+    // Soft Ask: mostrar modal customizado antes do prompt nativo
+    if ('Notification' in window && Notification.permission === 'default') {
+      setShowPermissionModal(true);
+    } else {
+      completeInstallation(eventId);
+    }
+  };
 
-            console.log('Permission granted! Subscribing device...');
-            await subscribeUser({ 
-                eventId,
-                metadata: queryParams // Salva dados do TWR no Redis
-            }); 
-        } else {
-            if (window.dataLayer) {
-              window.dataLayer.push({ event: 'PushDenied', platform: 'ios' });
-            }
+  const handleAcceptPush = async () => {
+    setShowPermissionModal(false);
+    const eventId = pendingEventId;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        if (window.dataLayer) {
+          window.dataLayer.push({ 
+            event: 'Lead', 
+            platform: 'ios',
+            event_id: 'ld_' + eventId
+          });
         }
-      } catch (e) {
-        console.warn('Notification permission failed');
+        fetch('/api/event', {
+          method: 'POST',
+          body: JSON.stringify({
+            eventName: 'Lead',
+            eventId: 'ld_' + eventId,
+            customData: { platform: 'ios', status: 'granted' }
+          })
+        }).catch(err => console.error('CAPI Lead Error:', err));
+
+        console.log('Permission granted! Subscribing device...');
+        await subscribeUser({ 
+          eventId,
+          metadata: queryParams
+        });
+      } else {
+        if (window.dataLayer) {
+          window.dataLayer.push({ event: 'PushDenied', platform: 'ios' });
+        }
       }
+    } catch (e) {
+      console.warn('Notification permission failed');
     }
 
-    // 3. Evento: AddPaymentInfo - GTM + CAPI
+    completeInstallation(eventId);
+  };
+
+  const handleDeclinePush = () => {
+    setShowPermissionModal(false);
+    if (window.dataLayer) {
+      window.dataLayer.push({ event: 'PushSkipped', platform: 'ios' });
+    }
+    completeInstallation(pendingEventId);
+  };
+
+  const completeInstallation = (eventId) => {
+    // Evento: AddPaymentInfo - GTM + CAPI
     if (window.dataLayer) {
       window.dataLayer.push({ 
         event: 'AddPaymentInfo',
@@ -138,7 +162,7 @@ export default function IosStorePage() {
       })
     }).catch(err => console.error('CAPI Payment Error:', err));
 
-    // 4. Show iOS specific instructions
+    // Show iOS specific instructions
     setShowIosTutorial(true);
     setIsFinished(true);
   };
@@ -208,6 +232,109 @@ export default function IosStorePage() {
             </div>
           </div>
         </div>
+
+        {/* Pre-Permission Modal - Soft Ask (Double Opt-in) */}
+        {showPermissionModal && (
+          <>
+            <style>{`
+              @keyframes gb_fadeIn { from { opacity: 0; } to { opacity: 1; } }
+              @keyframes gb_slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+              @keyframes gb_pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+            `}</style>
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              animation: 'gb_fadeIn 0.3s ease'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '28px',
+                padding: '32px 28px',
+                maxWidth: '340px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+                animation: 'gb_slideUp 0.4s ease'
+              }}>
+                <div style={{ fontSize: '56px', marginBottom: '12px', lineHeight: 1 }}>🎰</div>
+                <h2 style={{ 
+                  fontSize: '21px', 
+                  fontWeight: '700', 
+                  color: '#1c1c1e',
+                  marginBottom: '8px',
+                  lineHeight: 1.3
+                }}>Ative seus Bônus Exclusivos!</h2>
+                <p style={{ 
+                  color: '#8e8e93', 
+                  fontSize: '14px', 
+                  lineHeight: 1.5,
+                  marginBottom: '20px'
+                }}>
+                  Receba notificações de bônus diários e giros grátis direto no seu celular
+                </p>
+                
+                <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+                  {[
+                    { emoji: '🎁', text: 'Bônus diários na hora certa' },
+                    { emoji: '💰', text: 'Alertas de promoções relâmpago' },
+                    { emoji: '🔥', text: 'Seja o primeiro a saber' }
+                  ].map((item, i) => (
+                    <div key={i} style={{ 
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '8px 0',
+                      fontSize: '15px', color: '#1c1c1e'
+                    }}>
+                      <span style={{ fontSize: '20px' }}>{item.emoji}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleAcceptPush}
+                  style={{
+                    width: '100%',
+                    padding: '14px 0',
+                    background: 'linear-gradient(135deg, #007aff 0%, #5ac8fa 100%)',
+                    color: '#fff',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    border: 'none',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    marginBottom: '12px',
+                    boxShadow: '0 4px 16px rgba(0, 122, 255, 0.4)',
+                    animation: 'gb_pulse 2s ease-in-out infinite'
+                  }}
+                >
+                  🎁 Ativar Bônus Exclusivos
+                </button>
+                
+                <button
+                  onClick={handleDeclinePush}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#aaa',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    padding: '8px'
+                  }}
+                >
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Tutorial Modal */}
         {showIosTutorial && (
