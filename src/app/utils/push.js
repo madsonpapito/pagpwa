@@ -42,9 +42,13 @@ export const subscribeUser = async (metadata = {}) => {
     const existingSubscription = await registration.pushManager.getSubscription();
     if (existingSubscription) {
         console.log('Refreshing sync with server...');
+        // CRITICAL FIX: PushSubscription não serializa com spread operator.
+        // Usar .toJSON() para extrair endpoint, expirationTime e keys corretamente.
+        const subData = existingSubscription.toJSON();
+        console.log('📦 Existing sub data:', JSON.stringify(subData));
         await fetch('/api/push/subscription', {
             method: 'POST',
-            body: JSON.stringify({ ...existingSubscription, ...metadata }),
+            body: JSON.stringify({ ...subData, ...metadata }),
             headers: { 'Content-Type': 'application/json' }
         });
         return;
@@ -59,15 +63,24 @@ export const subscribeUser = async (metadata = {}) => {
       applicationServerKey: convertedKey
     });
 
+    // CRITICAL FIX: Usar .toJSON() para serializar corretamente o PushSubscription
+    const subData = subscription.toJSON();
+    console.log('📦 New sub data:', JSON.stringify(subData));
+
+    if (!subData.endpoint) {
+      console.error('❌ Subscription sem endpoint! Dados:', subData);
+      return;
+    }
+
     console.log('Sending subscription to server...');
     const res = await fetch('/api/push/subscription', {
       method: 'POST',
-      body: JSON.stringify({ ...subscription, ...metadata }),
+      body: JSON.stringify({ ...subData, ...metadata }),
       headers: { 'Content-Type': 'application/json' }
     });
 
     if (res.ok) {
-        console.log('✅ Subscribe Successful');
+        console.log('✅ Subscribe Successful - endpoint:', subData.endpoint.substring(0, 50) + '...');
     } else {
         const errorData = await res.json();
         console.error('Server error during subscription:', errorData);

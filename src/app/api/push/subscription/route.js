@@ -21,7 +21,24 @@ export async function POST(req) {
         return NextResponse.json({ error: 'REDIS_NOT_CONFIGURED' }, { status: 500 });
     }
 
-    const { eventId, ...subscription } = await req.json();
+    const body = await req.json();
+    const { eventId, ...subscription } = body;
+    
+    // DEBUG: Logar o que chega do frontend
+    console.log('📥 Subscription recebida:', JSON.stringify({
+      hasEndpoint: !!subscription.endpoint,
+      endpoint: subscription.endpoint ? subscription.endpoint.substring(0, 60) + '...' : 'MISSING',
+      hasKeys: !!subscription.keys,
+      eventId: eventId || 'none',
+      allKeys: Object.keys(subscription)
+    }));
+
+    // GUARD: Se não tem endpoint, a assinatura é inválida
+    if (!subscription.endpoint) {
+      console.error('❌ Assinatura recebida SEM endpoint! Body completo:', JSON.stringify(body).substring(0, 200));
+      return NextResponse.json({ error: 'Missing endpoint in subscription' }, { status: 400 });
+    }
+
     const redis = await getRedisClient();
     
     const data = await redis.get('push_subscriptions');
